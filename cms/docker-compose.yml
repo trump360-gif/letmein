@@ -1,0 +1,4 @@
+# 로컬 개발용 docker-compose
+# DB는 Storage Server (db.codeb.kr:5434)를 직접 사용
+# 로컬에서 postgres가 필요한 경우: docker run -d --name beauti-postgres-dev -e POSTGRES_DB=beauti_admin -e POSTGRES_USER=beauti -e POSTGRES_PASSWORD=beauti1234 -p 5433:5432 pgvector/pgvector:pg16
+services: {}

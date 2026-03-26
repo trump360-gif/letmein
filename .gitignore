@@ -1,0 +1,40 @@
+# Go
+server/tmp/
+*.exe
+
+# Flutter
+app/.dart_tool/
+app/.packages
+app/build/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/ios/Pods/
+app/ios/.symlinks/
+app/android/.gradle/
+app/android/local.properties
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+pgdata/
+
+# Backup (large files)
+cms_backup/
+
+# Node modules
+**/node_modules/
+
+# Next.js build
+**/.next/

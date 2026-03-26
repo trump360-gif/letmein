@@ -1,0 +1,19 @@
+{
+  "token_hmac_secret_key": "dev-centrifugo-secret",
+  "admin": {
+    "enabled": true,
+    "password": "admin",
+    "secret": "admin-secret"
+  },
+  "api_key": "dev-api-key",
+  "allowed_origins": ["*"],
+  "namespaces": [
+    {
+      "name": "chat",
+      "history_size": 100,
+      "history_ttl": "720h",
+      "force_push_join_leave": true,
+      "allow_publish_for_subscriber": true
+    }
+  ]
+}

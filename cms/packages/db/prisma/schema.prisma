@@ -1,0 +1,927 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                                                                BigInt                      @id @default(autoincrement())
+  kakao_id                                                          BigInt                      @unique
+  nickname                                                          String?                     @unique @db.VarChar(20)
+  profile_image                                                     String?                     @db.VarChar(500)
+  role                                                              String?                     @default("user") @db.VarChar(20)
+  status                                                            String?                     @default("active") @db.VarChar(20)
+  withdrawn_at                                                      DateTime?                   @db.Timestamptz(6)
+  createdAt                                                         DateTime?                   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                                                         DateTime?                   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  ad_creatives                                                      AdCreative[]
+  AdminUser                                                       AdminUser?
+  castFollows                                                       CastFollow[]
+  castMember                                                        CastMember?
+  cast_members_cast_members_verified_byTousers                      CastMember[]                @relation("cast_members_verified_byTousers")
+  chatRooms                                                         ChatRoom[]
+  comments                                                          Comment[]
+  consultation_requests_consultation_requests_coordinator_idTousers ConsultationRequest[]       @relation("consultation_requests_coordinator_idTousers")
+  consultations                                                     ConsultationRequest[]
+  coordinator_matches                                               CoordinatorMatch[]
+  device_tokens                                                     device_tokens[]
+  hospital                                                          Hospital?
+  images                                                            images[]
+  likes                                                             likes[]
+  messages                                                          ChatMessage[]
+  NotificationQueue                                                NotificationQueue[]
+  posts                                                             Post[]
+  reportsMade                                                       Report[]                    @relation("reporter")
+  sanctions                                                         Sanction[]
+  user_agreements                                                   user_agreements[]
+  user_interests                                                    user_interests[]
+  user_notification_settings                                        user_notification_settings?
+
+  @@index([kakao_id], map: "idx_users_kakao_id")
+  @@index([status], map: "idx_users_status")
+  @@map("users")
+}
+
+model Post {
+  id                   BigInt             @id @default(autoincrement())
+  userId               BigInt             @map("user_id")
+  board_type           String             @db.VarChar(20)
+  categoryId           Int?               @map("category_id")
+  title                String?            @db.VarChar(200)
+  content              String
+  hospital_id          BigInt?
+  procedure_date       DateTime?          @db.Date
+  isAnonymous          Boolean?           @default(false) @map("is_anonymous")
+  status               String?            @default("active") @db.VarChar(20)
+  likeCount            Int?               @default(0) @map("like_count")
+  commentCount         Int?               @default(0) @map("comment_count")
+  createdAt            DateTime?          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  comments             Comment[]
+  likes                likes[]
+  procedure_categories ProcedureCategory? @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hospitals            Hospital?          @relation(fields: [hospital_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user                 User               @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([board_type], map: "idx_posts_board_type")
+  @@index([hospital_id], map: "idx_posts_hospital")
+  @@map("posts")
+}
+
+model Comment {
+  id             BigInt    @id @default(autoincrement())
+  postId         BigInt    @map("post_id")
+  userId         BigInt    @map("user_id")
+  parentId       BigInt?   @map("parent_id")
+  content        String
+  isAnonymous    Boolean?  @default(false) @map("is_anonymous")
+  status         String?   @default("active") @db.VarChar(20)
+  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  is_cast_answer Boolean?  @default(false)
+  is_pinned      Boolean?  @default(false)
+  parent         Comment?  @relation("comment_replies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies        Comment[] @relation("comment_replies")
+  post           Post      @relation(fields: [postId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user           User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([postId], map: "idx_comments_post")
+  @@map("comments")
+}
+
+model Report {
+  id          BigInt    @id @default(autoincrement())
+  reporterId  BigInt    @map("reporter_id")
+  targetType  String    @map("target_type") @db.VarChar(20)
+  targetId    BigInt    @map("target_id")
+  reason      String    @db.VarChar(50)
+  description String?
+  status      String?   @default("pending") @db.VarChar(20)
+  resolved_at DateTime? @db.Timestamptz(6)
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  reporter    User      @relation("reporter", fields: [reporterId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("reports")
+}
+
+model Hospital {
+  id                         BigInt                       @id @default(autoincrement())
+  userId                     BigInt                       @unique @map("user_id")
+  name                       String                       @db.VarChar(100)
+  businessNumber             String?                      @map("business_number") @db.VarChar(20)
+  licenseImage               String?                      @map("license_image") @db.VarChar(500)
+  description                String?
+  address                    String?                      @db.VarChar(300)
+  phone                      String?                      @db.VarChar(20)
+  operatingHours             String?                      @map("operating_hours") @db.VarChar(200)
+  profileImage               String?                      @map("profile_image") @db.VarChar(500)
+  status                     String?                      @default("pending") @db.VarChar(20)
+  approvedAt                 DateTime?                    @map("approved_at") @db.Timestamptz(6)
+  createdAt                  DateTime?                    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                  DateTime?                    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isPremium                  Boolean?                     @default(false) @map("is_premium")
+  premiumTier                String?                      @map("premium_tier") @db.VarChar(20)
+  introVideoUrl              String?                      @map("intro_video_url") @db.VarChar(500)
+  detailedDescription        String?                      @map("detailed_description")
+  caseCount                  Int?                         @default(0) @map("case_count")
+  adCampaigns                AdCampaign[]
+  adCreatives                AdCreative[]
+  ad_credit_transactions     ad_credit_transactions[]
+  adCredits                  AdCredit?
+  chatRooms                  ChatRoom[]
+  consultation_responses     consultation_responses[]
+  consultationMatches        CoordinatorMatch[]
+  doctors                    HospitalDoctor[]
+  hospital_procedure_details hospital_procedure_details[]
+  specialties                HospitalSpecialty[]
+  subscriptions              HospitalSubscription[]
+  user                       User                         @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  posts                      Post[]
+
+  @@index([status], map: "idx_hospitals_status")
+  @@map("hospitals")
+}
+
+model HospitalSpecialty {
+  id         BigInt            @id @default(autoincrement())
+  hospitalId BigInt            @map("hospital_id")
+  categoryId Int               @map("category_id")
+  category   ProcedureCategory @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hospital   Hospital          @relation(fields: [hospitalId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([hospitalId, categoryId])
+  @@map("hospital_specialties")
+}
+
+model HospitalDoctor {
+  id           BigInt    @id @default(autoincrement())
+  hospitalId   BigInt    @map("hospital_id")
+  name         String    @db.VarChar(50)
+  title        String?   @db.VarChar(100)
+  experience   String?
+  profileImage String?   @map("profile_image") @db.VarChar(500)
+  sortOrder    Int?      @default(0) @map("sort_order")
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  hospital     Hospital  @relation(fields: [hospitalId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([hospitalId], map: "idx_hospital_doctors_hospital")
+  @@map("hospital_doctors")
+}
+
+model ProcedureCategory {
+  id                         Int                          @id @default(autoincrement())
+  name                       String                       @db.VarChar(50)
+  icon                       String?                      @db.VarChar(100)
+  sortOrder                  Int?                         @default(0) @map("sort_order")
+  createdAt                  DateTime?                    @default(now()) @map("created_at") @db.Timestamptz(6)
+  consultation_requests      ConsultationRequest[]
+  hospital_procedure_details hospital_procedure_details[]
+  specialties                HospitalSpecialty[]
+  posts                      Post[]
+  details                    ProcedureDetail[]
+  user_interests             user_interests[]
+
+  @@map("procedure_categories")
+}
+
+model ProcedureDetail {
+  id                           Int                            @id @default(autoincrement())
+  categoryId                   Int                            @map("category_id")
+  name                         String                         @db.VarChar(100)
+  sortOrder                    Int?                           @default(0) @map("sort_order")
+  createdAt                    DateTime?                      @default(now()) @map("created_at") @db.Timestamptz(6)
+  consultation_request_details consultation_request_details[]
+  category                     ProcedureCategory              @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("procedure_details")
+}
+
+model ConsultationRequest {
+  id                                                BigInt                         @id @default(autoincrement())
+  userId                                            BigInt                         @map("user_id")
+  categoryId                                        Int                            @map("category_id")
+  description                                       String
+  preferredPeriod                                   String?                        @map("preferred_period") @db.VarChar(30)
+  photoPublic                                       Boolean?                       @default(true) @map("photo_public")
+  status                                            String?                        @default("active") @db.VarChar(20)
+  expiresAt                                         DateTime                       @map("expires_at") @db.Timestamptz(6)
+  createdAt                                         DateTime?                      @default(now()) @map("created_at") @db.Timestamptz(6)
+  coordinatorId                                     BigInt?                        @map("coordinator_id")
+  coordinatorNote                                   String?                        @map("coordinator_note")
+  matchedAt                                         DateTime?                      @map("matched_at") @db.Timestamptz(6)
+  escalatedAt                                       DateTime?                      @map("escalated_at") @db.Timestamptz(6)
+  chatRooms                                         ChatRoom[]
+  consultation_request_details                      consultation_request_details[]
+  procedure_categories                              ProcedureCategory              @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_consultation_requests_coordinator_idTousers User?                          @relation("consultation_requests_coordinator_idTousers", fields: [coordinatorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user                                              User                           @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  consultation_responses                            consultation_responses[]
+  matches                                           CoordinatorMatch[]
+
+  @@index([coordinatorId], map: "idx_consultation_requests_coordinator")
+  @@index([expiresAt], map: "idx_consultation_requests_expires")
+  @@index([status], map: "idx_consultation_requests_status")
+  @@index([userId], map: "idx_consultation_requests_user")
+  @@map("consultation_requests")
+}
+
+model CoordinatorMatch {
+  id         BigInt              @id @default(autoincrement())
+  requestId  BigInt              @map("request_id")
+  hospitalId BigInt              @map("hospital_id")
+  matchedBy  BigInt              @map("matched_by")
+  note       String?
+  status     String?             @default("matched") @db.VarChar(20)
+  createdAt  DateTime?           @default(now()) @map("created_at") @db.Timestamptz(6)
+  hospital   Hospital            @relation(fields: [hospitalId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users      User                @relation(fields: [matchedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  request    ConsultationRequest @relation(fields: [requestId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([requestId, hospitalId])
+  @@index([hospitalId], map: "idx_coordinator_matches_hospital")
+  @@index([requestId], map: "idx_coordinator_matches_request")
+  @@map("coordinator_matches")
+}
+
+model ChatRoom {
+  id            BigInt               @id @default(autoincrement())
+  requestId     BigInt?              @map("request_id")
+  userId        BigInt               @map("user_id")
+  hospitalId    BigInt               @map("hospital_id")
+  status        String?              @default("active") @db.VarChar(20)
+  closedAt      DateTime?            @map("closed_at") @db.Timestamptz(6)
+  lastMessageAt DateTime?            @default(now()) @map("last_message_at") @db.Timestamptz(6)
+  createdAt     DateTime?            @default(now()) @map("created_at") @db.Timestamptz(6)
+  hospital      Hospital             @relation(fields: [hospitalId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  request       ConsultationRequest? @relation(fields: [requestId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user          User                 @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  messages      ChatMessage[]
+
+  @@index([hospitalId], map: "idx_chat_rooms_hospital")
+  @@index([userId], map: "idx_chat_rooms_user")
+  @@map("chat_rooms")
+}
+
+model ChatMessage {
+  id          BigInt    @id @default(autoincrement())
+  roomId      BigInt    @map("room_id")
+  senderId    BigInt    @map("sender_id")
+  messageType String?   @default("text") @map("message_type") @db.VarChar(20)
+  content     String?
+  readAt      DateTime? @map("read_at") @db.Timestamptz(6)
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  room        ChatRoom  @relation(fields: [roomId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users       User      @relation(fields: [senderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([roomId], map: "idx_messages_room")
+  @@map("messages")
+}
+
+model CastMember {
+  id                                    BigInt              @id @default(autoincrement())
+  userId                                BigInt              @unique @map("user_id")
+  displayName                           String              @map("display_name") @db.VarChar(50)
+  bio                                   String?
+  profileImage                          String?             @map("profile_image") @db.VarChar(500)
+  badgeType                             String?             @default("verified") @map("badge_type") @db.VarChar(20)
+  verificationStatus                    String?             @default("pending") @map("verification_status") @db.VarChar(20)
+  verifiedAt                            DateTime?           @map("verified_at") @db.Timestamptz(6)
+  verifiedBy                            BigInt?             @map("verified_by")
+  rejectionReason                       String?             @map("rejection_reason")
+  youtubeChannelUrl                     String?             @map("youtube_channel_url") @db.VarChar(500)
+  followerCount                         Int?                @default(0) @map("follower_count")
+  storyCount                            Int?                @default(0) @map("story_count")
+  createdAt                             DateTime?           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                             DateTime?           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  follows                               CastFollow[]
+  user                                  User                @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_cast_members_verified_byTousers User?               @relation("cast_members_verified_byTousers", fields: [verifiedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  stories                               CastStory[]
+  episodes                              EpisodeCastMember[]
+
+  @@index([userId], map: "idx_cast_members_user")
+  @@index([verificationStatus], map: "idx_cast_members_verification")
+  @@map("cast_members")
+}
+
+model YouTubeEpisode {
+  id             BigInt              @id @default(autoincrement())
+  youtubeUrl     String              @map("youtube_url") @db.VarChar(500)
+  youtubeVideoId String              @map("youtube_video_id") @db.VarChar(50)
+  title          String              @db.VarChar(200)
+  thumbnailUrl   String?             @map("thumbnail_url") @db.VarChar(500)
+  airDate        DateTime?           @map("air_date") @db.Date
+  isHero         Boolean?            @default(false) @map("is_hero")
+  sortOrder      Int?                @default(0) @map("sort_order")
+  createdAt      DateTime?           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime?           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  cast_stories   CastStory[]
+  castMembers    EpisodeCastMember[]
+
+  @@map("youtube_episodes")
+}
+
+model EpisodeCastMember {
+  episodeId    BigInt         @map("episode_id")
+  castMemberId BigInt         @map("cast_member_id")
+  castMember   CastMember     @relation(fields: [castMemberId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  episode      YouTubeEpisode @relation(fields: [episodeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([episodeId, castMemberId])
+  @@map("episode_cast_members")
+}
+
+model CastStory {
+  id                BigInt              @id @default(autoincrement())
+  castMemberId      BigInt              @map("cast_member_id")
+  episodeId         BigInt?             @map("episode_id")
+  content           String
+  storyType         String?             @default("general") @map("story_type") @db.VarChar(20)
+  status            String?             @default("active") @db.VarChar(20)
+  likeCount         Int?                @default(0) @map("like_count")
+  commentCount      Int?                @default(0) @map("comment_count")
+  createdAt         DateTime?           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime?           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  castMember        CastMember          @relation(fields: [castMemberId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  youtube_episodes  YouTubeEpisode?     @relation(fields: [episodeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cast_story_images cast_story_images[]
+
+  @@index([castMemberId], map: "idx_cast_stories_member")
+  @@index([status], map: "idx_cast_stories_status")
+  @@map("cast_stories")
+}
+
+model CastFollow {
+  userId       BigInt     @map("user_id")
+  castMemberId BigInt     @map("cast_member_id")
+  createdAt    DateTime?  @default(now()) @map("created_at") @db.Timestamptz(6)
+  castMember   CastMember @relation(fields: [castMemberId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user         User       @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([userId, castMemberId])
+  @@index([castMemberId], map: "idx_cast_follows_member")
+  @@map("cast_follows")
+}
+
+model HospitalSubscription {
+  id           BigInt    @id @default(autoincrement())
+  hospitalId   BigInt    @map("hospital_id")
+  tier         String    @default("basic") @db.VarChar(20)
+  status       String    @default("active") @db.VarChar(20)
+  startedAt    DateTime  @default(now()) @map("started_at") @db.Timestamptz(6)
+  expiresAt    DateTime  @map("expires_at") @db.Timestamptz(6)
+  cancelledAt  DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  monthlyPrice Int       @map("monthly_price")
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  hospital     Hospital  @relation(fields: [hospitalId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([hospitalId], map: "idx_hospital_subscriptions_hospital")
+  @@index([status], map: "idx_hospital_subscriptions_status")
+  @@map("hospital_subscriptions")
+}
+
+model AdCredit {
+  id         BigInt    @id @default(autoincrement())
+  hospitalId BigInt    @unique(map: "idx_ad_credits_hospital") @map("hospital_id")
+  balance    Int       @default(0)
+  updatedAt  DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  hospital   Hospital  @relation(fields: [hospitalId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("ad_credits")
+}
+
+model AdCreative {
+  id              BigInt       @id @default(autoincrement())
+  hospitalId      BigInt       @map("hospital_id")
+  imageUrl        String       @map("image_url") @db.VarChar(500)
+  headline        String       @db.VarChar(60)
+  reviewStatus    String?      @default("pending") @map("review_status") @db.VarChar(20)
+  rejectionReason String?      @map("rejection_reason")
+  reviewedAt      DateTime?    @map("reviewed_at") @db.Timestamptz(6)
+  reviewedBy      BigInt?      @map("reviewed_by")
+  createdAt       DateTime?    @default(now()) @map("created_at") @db.Timestamptz(6)
+  campaigns       AdCampaign[]
+  hospital        Hospital     @relation(fields: [hospitalId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users           User?        @relation(fields: [reviewedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([hospitalId], map: "idx_ad_creatives_hospital")
+  @@index([reviewStatus], map: "idx_ad_creatives_status")
+  @@map("ad_creatives")
+}
+
+model AdCampaign {
+  id                   BigInt                 @id @default(autoincrement())
+  hospitalId           BigInt                 @map("hospital_id")
+  creativeId           BigInt                 @map("creative_id")
+  placement            String                 @db.VarChar(30)
+  status               String?                @default("active") @db.VarChar(20)
+  dailyBudget          Int                    @map("daily_budget")
+  cpmPrice             Int                    @map("cpm_price")
+  startDate            DateTime               @map("start_date") @db.Date
+  endDate              DateTime               @map("end_date") @db.Date
+  totalImpressions     BigInt?                @default(0) @map("total_impressions")
+  totalClicks          BigInt?                @default(0) @map("total_clicks")
+  totalSpent           Int?                   @default(0) @map("total_spent")
+  createdAt            DateTime?              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime?              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  creative             AdCreative             @relation(fields: [creativeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hospital             Hospital               @relation(fields: [hospitalId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ad_impressions_daily ad_impressions_daily[]
+
+  @@index([startDate, endDate], map: "idx_ad_campaigns_dates")
+  @@index([hospitalId], map: "idx_ad_campaigns_hospital")
+  @@index([status], map: "idx_ad_campaigns_status")
+  @@map("ad_campaigns")
+}
+
+model ad_credit_transactions {
+  id          BigInt    @id @default(autoincrement())
+  hospital_id BigInt
+  amount      Int
+  type        String    @db.VarChar(20)
+  description String?   @db.VarChar(200)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  hospitals   Hospital  @relation(fields: [hospital_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([hospital_id], map: "idx_ad_credit_transactions_hospital")
+}
+
+model ad_impressions_daily {
+  id           BigInt     @id @default(autoincrement())
+  campaign_id  BigInt
+  date         DateTime   @db.Date
+  impressions  Int?       @default(0)
+  clicks       Int?       @default(0)
+  spent        Int?       @default(0)
+  ad_campaigns AdCampaign @relation(fields: [campaign_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([campaign_id, date])
+  @@index([campaign_id], map: "idx_ad_impressions_daily_campaign")
+}
+
+model cast_story_images {
+  id           BigInt    @id @default(autoincrement())
+  story_id     BigInt
+  image_id     BigInt
+  sort_order   Int?      @default(0)
+  images       images    @relation(fields: [image_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cast_stories CastStory @relation(fields: [story_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model consultation_request_details {
+  request_id            BigInt
+  detail_id             Int
+  procedure_details     ProcedureDetail     @relation(fields: [detail_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  consultation_requests ConsultationRequest @relation(fields: [request_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([request_id, detail_id])
+}
+
+model consultation_responses {
+  id                    BigInt              @id @default(autoincrement())
+  request_id            BigInt
+  hospital_id           BigInt
+  intro                 String?             @db.VarChar(60)
+  experience            String?             @db.VarChar(60)
+  message               String
+  consult_methods       String?             @db.VarChar(100)
+  consult_hours         String?             @db.VarChar(100)
+  status                String?             @default("sent") @db.VarChar(20)
+  created_at            DateTime?           @default(now()) @db.Timestamptz(6)
+  hospitals             Hospital            @relation(fields: [hospital_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  consultation_requests ConsultationRequest @relation(fields: [request_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([request_id, hospital_id])
+  @@index([request_id], map: "idx_consultation_responses_request")
+}
+
+model device_tokens {
+  id         BigInt    @id @default(autoincrement())
+  user_id    BigInt
+  token      String    @db.VarChar(500)
+  platform   String    @db.VarChar(10)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  users      User      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([user_id, token])
+}
+
+model hospital_procedure_details {
+  id                   BigInt            @id @default(autoincrement())
+  hospital_id          BigInt
+  category_id          Int
+  description          String?
+  image_url            String?           @db.VarChar(500)
+  created_at           DateTime?         @default(now()) @db.Timestamptz(6)
+  procedure_categories ProcedureCategory @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hospitals            Hospital          @relation(fields: [hospital_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([hospital_id, category_id])
+}
+
+model images {
+  id                BigInt              @id @default(autoincrement())
+  uploader_id       BigInt
+  bucket            String              @db.VarChar(20)
+  original_path     String              @db.VarChar(500)
+  thumb_path        String?             @db.VarChar(500)
+  medium_path       String?             @db.VarChar(500)
+  full_path         String?             @db.VarChar(500)
+  content_type      String?             @db.VarChar(50)
+  size_bytes        BigInt?
+  entity_type       String?             @db.VarChar(50)
+  entity_id         BigInt?
+  created_at        DateTime?           @default(now()) @db.Timestamptz(6)
+  cast_story_images cast_story_images[]
+  users             User                @relation(fields: [uploader_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model likes {
+  user_id    BigInt
+  post_id    BigInt
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  posts      Post      @relation(fields: [post_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users      User      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([user_id, post_id])
+}
+
+model poll_options {
+  id         BigInt       @id @default(autoincrement())
+  poll_id    BigInt?
+  text       String       @db.VarChar(200)
+  image_url  String?      @db.VarChar(500)
+  vote_count Int?         @default(0)
+  sort_order Int?         @default(0)
+  polls      polls?       @relation(fields: [poll_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  poll_votes poll_votes[]
+
+  @@index([poll_id], map: "idx_poll_options_poll_id")
+}
+
+model poll_votes {
+  poll_id      BigInt
+  option_id    BigInt?
+  user_id      BigInt
+  created_at   DateTime?     @default(now()) @db.Timestamptz(6)
+  poll_options poll_options? @relation(fields: [option_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  polls        polls         @relation(fields: [poll_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([poll_id, user_id])
+  @@index([poll_id], map: "idx_poll_votes_poll_id")
+}
+
+model polls {
+  id           BigInt         @id @default(autoincrement())
+  user_id      BigInt?
+  title        String         @db.VarChar(200)
+  description  String?
+  poll_type    String?        @default("single") @db.VarChar(20)
+  status       String?        @default("active") @db.VarChar(20)
+  ends_at      DateTime?      @db.Timestamptz(6)
+  vote_count   Int?           @default(0)
+  created_at   DateTime?      @default(now()) @db.Timestamptz(6)
+  poll_options poll_options[]
+  poll_votes   poll_votes[]
+
+  @@index([created_at(sort: Desc)], map: "idx_polls_created_at")
+}
+
+model user_agreements {
+  id             BigInt    @id @default(autoincrement())
+  user_id        BigInt
+  agreement_type String    @db.VarChar(50)
+  agreed         Boolean   @default(false)
+  agreed_at      DateTime? @default(now()) @db.Timestamptz(6)
+  users          User      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model user_interests {
+  id                   BigInt            @id @default(autoincrement())
+  user_id              BigInt
+  category_id          Int
+  created_at           DateTime?         @default(now()) @db.Timestamptz(6)
+  procedure_categories ProcedureCategory @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users                User              @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([user_id, category_id])
+}
+
+model user_notification_settings {
+  id                   BigInt    @id @default(autoincrement())
+  user_id              BigInt    @unique
+  consultation_arrived Boolean?  @default(true)
+  chat_message         Boolean?  @default(true)
+  chat_expiry          Boolean?  @default(true)
+  community_activity   Boolean?  @default(true)
+  event_notice         Boolean?  @default(true)
+  marketing            Boolean?  @default(false)
+  updated_at           DateTime? @default(now()) @db.Timestamptz(6)
+  users                User      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model AdminActivityLog {
+  id            BigInt       @id @default(autoincrement())
+  admin_user_id BigInt?
+  action        String       @db.VarChar(100)
+  target_type   String?      @db.VarChar(50)
+  target_id     BigInt?
+  changes       String?
+  created_at    DateTime?    @default(now()) @db.Timestamptz(6)
+  AdminUser   AdminUser? @relation(fields: [admin_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("admin_activity_logs")
+}
+
+model AdminLoginHistory {
+  id            BigInt       @id @default(autoincrement())
+  admin_user_id BigInt?
+  ip            String?      @db.VarChar(50)
+  user_agent    String?
+  login_at      DateTime?    @default(now()) @db.Timestamptz(6)
+  AdminUser   AdminUser? @relation(fields: [admin_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("admin_login_history")
+}
+
+model AdminRolePermission {
+  id          BigInt      @id @default(autoincrement())
+  role_id     BigInt
+  permission  String      @db.VarChar(100)
+  AdminRole AdminRole @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([role_id, permission])
+
+  @@map("admin_role_permissions")
+}
+
+model AdminRole {
+  id                     BigInt                   @id @default(autoincrement())
+  name                   String                   @unique @db.VarChar(50)
+  description            String?
+  created_at             DateTime?                @default(now()) @db.Timestamptz(6)
+  AdminRolePermission AdminRolePermission[]
+  AdminUser            AdminUser[]
+
+  @@map("admin_roles")
+}
+
+model AdminUser {
+  id                  BigInt                @id @default(autoincrement())
+  user_id             BigInt                @unique
+  role_id             BigInt?
+  created_at          DateTime?             @default(now()) @db.Timestamptz(6)
+  AdminActivityLog AdminActivityLog[]
+  AdminLoginHistory AdminLoginHistory[]
+  AdminRole         AdminRole?          @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users               User                  @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("admin_users")
+}
+
+model BannedWord {
+  id         BigInt    @id @default(autoincrement())
+  word       String    @db.VarChar(100)
+  is_regex   Boolean?  @default(false)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@map("banned_words")
+}
+
+model BannerGroup {
+  id         BigInt    @id @default(autoincrement())
+  name       String    @db.VarChar(100)
+  slug       String    @unique @db.VarChar(100)
+  is_active  Boolean?  @default(true)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  banners    Banner[]
+
+  @@map("banner_groups")
+}
+
+model BannerStat {
+  id        BigInt   @id @default(autoincrement())
+  banner_id BigInt?
+  date      DateTime @db.Date
+  views     Int?     @default(0)
+  clicks    Int?     @default(0)
+  banners   Banner? @relation(fields: [banner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([banner_id, date])
+
+  @@map("banner_stats")
+}
+
+model Banner {
+  id            BigInt         @id @default(autoincrement())
+  group_id      BigInt?
+  title         String         @db.VarChar(200)
+  banner_type   String?        @default("image") @db.VarChar(20)
+  image_url     String?        @db.VarChar(500)
+  link_url      String?        @db.VarChar(500)
+  is_active     Boolean?       @default(true)
+  sort_order    Int?           @default(0)
+  start_date    DateTime?      @db.Timestamptz(6)
+  end_date      DateTime?      @db.Timestamptz(6)
+  view_count    Int?           @default(0)
+  click_count   Int?           @default(0)
+  created_at    DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime?      @default(now()) @db.Timestamptz(6)
+  BannerStat  BannerStat[]
+  BannerGroup BannerGroup? @relation(fields: [group_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("banners")
+}
+
+model BoardGroup {
+  id         BigInt    @id @default(autoincrement())
+  name_key   String    @db.VarChar(100)
+  sort_order Int?      @default(0)
+  is_visible Boolean?  @default(true)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  boards     Board[]
+
+  @@map("board_groups")
+}
+
+model Board {
+  id             BigInt        @id @default(autoincrement())
+  group_id       BigInt?
+  parent_id      BigInt?
+  name_key       String        @db.VarChar(100)
+  slug           String        @unique @db.VarChar(100)
+  full_path      String?       @db.VarChar(300)
+  description    String?
+  board_type     String?       @default("general") @db.VarChar(30)
+  thumbnail_data String?
+  sort_order     Int?          @default(0)
+  is_visible     Boolean?      @default(true)
+  created_at     DateTime?     @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime?     @default(now()) @db.Timestamptz(6)
+  BoardGroup   BoardGroup? @relation(fields: [group_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  boards         Board?       @relation("BoardToBoard", fields: [parent_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_boards   Board[]      @relation("BoardToBoard")
+
+  @@map("boards")
+}
+
+model EmailTemplate {
+  id         BigInt    @id @default(autoincrement())
+  type       String    @unique @db.VarChar(50)
+  subject    String?   @db.VarChar(200)
+  content    String?
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@map("email_templates")
+}
+
+model HomepageSection {
+  id         BigInt    @id @default(autoincrement())
+  type       String    @db.VarChar(50)
+  config     String?
+  sort_order Int?      @default(0)
+  is_visible Boolean?  @default(true)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@map("homepage_sections")
+}
+
+model Menu {
+  id          BigInt    @id @default(autoincrement())
+  parent_id   BigInt?
+  name_key    String    @db.VarChar(100)
+  icon        String?   @db.VarChar(100)
+  url         String?   @db.VarChar(500)
+  sort_order  Int?      @default(0)
+  is_visible  Boolean?  @default(true)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  menus       Menu?    @relation("menusTomenus", fields: [parent_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_menus Menu[]   @relation("menusTomenus")
+
+  @@map("menus")
+}
+
+model NotificationQueue {
+  id         BigInt    @id @default(autoincrement())
+  user_id    BigInt?
+  channel    String?   @default("push") @db.VarChar(30)
+  title      String?   @db.VarChar(200)
+  content    String?
+  status     String?   @default("pending") @db.VarChar(20)
+  sent_at    DateTime? @db.Timestamptz(6)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  users      User?     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("notification_queue")
+}
+
+model PointRule {
+  id          BigInt    @id @default(autoincrement())
+  type        String    @unique @db.VarChar(50)
+  amount      Int?      @default(0)
+  daily_limit Int?      @default(0)
+  min_length  Int?      @default(0)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@map("point_rules")
+}
+
+model Popup {
+  id         BigInt    @id @default(autoincrement())
+  title      String    @db.VarChar(200)
+  content    String?
+  popup_type String?   @default("notice") @db.VarChar(20)
+  image_url  String?   @db.VarChar(500)
+  link_url   String?   @db.VarChar(500)
+  is_active  Boolean?  @default(true)
+  start_date DateTime? @db.Timestamptz(6)
+  end_date   DateTime? @db.Timestamptz(6)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@map("popups")
+}
+
+model Sanction {
+  id            BigInt    @id @default(autoincrement())
+  user_id       BigInt
+  sanction_type String    @db.VarChar(30)
+  reason        String?
+  expires_at    DateTime? @db.Timestamptz(6)
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+  users         User      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("sanctions")
+}
+
+model SiteSetting {
+  id          BigInt    @id @default(autoincrement())
+  key         String    @unique @db.VarChar(100)
+  value       String?
+  value_type  String?   @default("string") @db.VarChar(20)
+  description String?
+  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@map("site_settings")
+}
+
+model StatsDaily {
+  id           BigInt    @id @default(autoincrement())
+  date         DateTime  @unique @db.Date
+  new_users    Int?      @default(0)
+  active_users Int?      @default(0)
+  new_posts    Int?      @default(0)
+  new_comments Int?      @default(0)
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@map("stats_daily")
+}
+
+model Terms {
+  id          BigInt    @id @default(autoincrement())
+  type        String    @db.VarChar(50)
+  version     Int?      @default(1)
+  title       String?   @db.VarChar(200)
+  content     String?
+  is_required Boolean?  @default(true)
+  enforced_at DateTime? @db.Timestamptz(6)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@map("terms")
+}
+
+model Translation {
+  id         BigInt    @id @default(autoincrement())
+  key        String    @unique @db.VarChar(200)
+  ko         String?
+  ja         String?
+  en         String?
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@map("translations")
+}
+
+model UserGrade {
+  id               BigInt    @id @default(autoincrement())
+  grade            Int       @unique
+  name             String    @db.VarChar(50)
+  conditions       String?
+  storage_limit_mb Int?      @default(100)
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@map("user_grades")
+}
+
+model WebhookConfig {
+  id         BigInt    @id @default(autoincrement())
+  url        String    @db.VarChar(500)
+  events     String?
+  is_active  Boolean?  @default(true)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@map("webhook_configs")
+}

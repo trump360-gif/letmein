@@ -1,0 +1,149 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ─── 게시글 본문 스타일 ─── */
+@layer components {
+  .post-content {
+    @apply prose prose-base max-w-none;
+
+    /* 기본 텍스트: 가독성 최우선 */
+    @apply prose-p:text-[15.5px] prose-p:leading-[1.95] prose-p:text-[#2D2D2D] prose-p:tracking-[-0.01em];
+    /* 단락 간격 */
+    @apply prose-p:mt-0 prose-p:mb-[1.5em];
+
+    /* 제목 */
+    @apply prose-h2:text-[20px] prose-h2:font-bold prose-h2:text-[#1a1918] prose-h2:mt-10 prose-h2:mb-4 prose-h2:pb-2.5 prose-h2:border-b prose-h2:border-[#E5E4E1];
+    @apply prose-h3:text-[17px] prose-h3:font-semibold prose-h3:text-[#1a1918] prose-h3:mt-7 prose-h3:mb-2;
+
+    /* 링크 */
+    @apply prose-a:text-[#3D8A5A] prose-a:no-underline prose-a:font-medium hover:prose-a:underline;
+
+    /* 리스트 */
+    @apply prose-ul:my-4 prose-ol:my-4 prose-ul:pl-5 prose-ol:pl-5;
+    @apply prose-li:text-[15px] prose-li:leading-[1.9] prose-li:text-[#2D2D2D] prose-li:mb-1;
+
+    /* 강조 */
+    @apply prose-strong:text-[#1a1918] prose-strong:font-semibold;
+
+    /* 이미지 */
+    @apply prose-img:rounded-2xl prose-img:shadow-sm prose-img:my-7 prose-img:border prose-img:border-[#E5E4E1];
+
+    /* 인용구 */
+    @apply prose-blockquote:border-l-[3px] prose-blockquote:border-[#3D8A5A] prose-blockquote:bg-[#f6fbf8] prose-blockquote:rounded-r-xl prose-blockquote:py-3 prose-blockquote:px-5 prose-blockquote:not-italic prose-blockquote:text-[#2c5e3f] prose-blockquote:text-[15px] prose-blockquote:my-5;
+
+    /* 구분선 */
+    @apply prose-hr:border-[#EBEBEB] prose-hr:my-8;
+
+    /* 코드 */
+    @apply prose-code:text-[#c7254e] prose-code:bg-[#f9f2f4] prose-code:rounded prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[13.5px] prose-code:font-normal;
+  }
+
+  /* 줄바꿈만 있는 평문 처리 */
+  .post-content br {
+    display: block;
+    content: "";
+    margin-top: 0.5em;
+  }
+
+  /* 팁 박스 */
+  .post-content .tip-box {
+    @apply bg-[#f4fbf7] border border-[#3D8A5A]/25 rounded-2xl p-5 my-6 text-[15px];
+  }
+  .post-content .tip-box strong:first-child {
+    @apply text-[#3D8A5A] block mb-1.5;
+  }
+
+  /* 하이라이트 박스 */
+  .post-content .highlight-box {
+    @apply bg-[#fffbf0] border border-[#f5d87c] rounded-2xl p-5 my-6 text-[15px];
+  }
+
+  /* 요약 박스 */
+  .post-content .summary-box {
+    @apply bg-[#f8f8f6] border border-[#E5E4E1] rounded-2xl p-6 my-7 text-[15px];
+  }
+  .post-content .summary-box ul {
+    @apply list-none pl-0 space-y-1.5;
+  }
+  .post-content .summary-box li::before {
+    content: "✓ ";
+    @apply text-[#3D8A5A] font-bold;
+  }
+
+  /* 구버전 호환 */
+  .blog-content { @apply post-content; }
+}

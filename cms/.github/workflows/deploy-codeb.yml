@@ -1,0 +1,234 @@
+# Beauti CMS CI/CD Pipeline (Minio S3 Cache + Blue-Green)
+# Monorepo: apps/web (Admin + Blog 통합)
+# Blue: port 4168 | Green: port 4169
+# DB: Storage Server (db.codeb.kr:5434)
+
+name: Web CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'packages/**'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action'
+        required: true
+        default: 'deploy'
+        type: choice
+        options:
+          - deploy
+          - promote
+          - rollback
+      no_cache:
+        description: 'Force rebuild without cache'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  REGISTRY: 64.176.226.119:5000
+  IMAGE_NAME: beauti-cms2
+  MINIO_ENDPOINT: http://64.176.226.119:9000
+  MINIO_BUCKET: docker-cache
+
+concurrency:
+  group: web-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy
+    runs-on: [self-hosted, codeb]
+    if: github.event_name == 'push' || github.event.inputs.action == 'deploy'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          buildkitd-config-inline: |
+            [registry."64.176.226.119:5000"]
+              http = true
+              insecure = true
+
+      - name: Build and Push (Minio S3 Cache)
+        run: |
+          IMAGE_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+
+          echo "Building: $IMAGE_TAG"
+
+          if [ "${{ github.event.inputs.no_cache }}" = "true" ]; then
+            docker buildx build \
+              --no-cache \
+              --build-arg NPM_TOKEN=${{ secrets.GHCR_PAT }} \
+              -t "$IMAGE_TAG" \
+              -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" \
+              --push \
+              -f apps/web/Dockerfile \
+              .
+          else
+            docker buildx build \
+              --cache-from "type=s3,region=us-east-1,bucket=${{ env.MINIO_BUCKET }},name=beauti-cms2,endpoint_url=${{ env.MINIO_ENDPOINT }},access_key_id=${{ secrets.MINIO_ACCESS_KEY }},secret_access_key=${{ secrets.MINIO_SECRET_KEY }}" \
+              --cache-to "type=s3,region=us-east-1,bucket=${{ env.MINIO_BUCKET }},name=beauti-cms2,mode=max,endpoint_url=${{ env.MINIO_ENDPOINT }},access_key_id=${{ secrets.MINIO_ACCESS_KEY }},secret_access_key=${{ secrets.MINIO_SECRET_KEY }}" \
+              --build-arg NPM_TOKEN=${{ secrets.GHCR_PAT }} \
+              -t "$IMAGE_TAG" \
+              -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" \
+              --push \
+              -f apps/web/Dockerfile \
+              .
+          fi
+
+      - name: Deploy to inactive slot (Blue-Green)
+        timeout-minutes: 5
+        run: |
+          IMAGE_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          SLOT_FILE="/opt/codeb/slots/beauti-cms-active-slot"
+
+          mkdir -p /opt/codeb/slots
+          ACTIVE_SLOT=$(cat "$SLOT_FILE" 2>/dev/null || echo "green")
+          if [ "$ACTIVE_SLOT" = "blue" ]; then
+            DEPLOY_SLOT="green"; DEPLOY_PORT="4169"
+          else
+            DEPLOY_SLOT="blue"; DEPLOY_PORT="4168"
+          fi
+          echo "Active: $ACTIVE_SLOT -> Deploying to: $DEPLOY_SLOT (port $DEPLOY_PORT)"
+
+          CONTAINER="beauti-cms-production-${DEPLOY_SLOT}"
+
+          if docker inspect "$CONTAINER" >/dev/null 2>&1; then
+            docker stop -t 30 "$CONTAINER" 2>/dev/null || true
+            docker rm "$CONTAINER" 2>/dev/null || true
+          fi
+
+          docker network create codeb-network 2>/dev/null || true
+          docker pull "$IMAGE_TAG"
+
+          docker run -d \
+            --name "$CONTAINER" \
+            --network codeb-network \
+            --restart on-failure:3 \
+            --memory 2g \
+            --cpus 2 \
+            --env-file /opt/codeb/env/beauti-cms/.env \
+            -e NODE_ENV=production \
+            -e PORT=3000 \
+            -e SLOT=$DEPLOY_SLOT \
+            -p ${DEPLOY_PORT}:3000 \
+            "$IMAGE_TAG"
+
+          echo "Waiting for health check..."
+          for i in $(seq 1 12); do
+            sleep 5
+            if curl -sf http://localhost:${DEPLOY_PORT}/api/health > /dev/null 2>&1; then
+              echo "Health check passed (${i})"
+              break
+            fi
+            echo "  attempt $i/12..."
+          done
+
+          if ! curl -sf http://localhost:${DEPLOY_PORT}/api/health > /dev/null 2>&1; then
+            echo "Health check failed"
+            docker logs "$CONTAINER" --tail 30
+            exit 1
+          fi
+
+          echo ""
+          echo "Deployed to $DEPLOY_SLOT slot (port $DEPLOY_PORT)"
+          echo "Preview URL: https://beauti-cms-${DEPLOY_SLOT}.preview.codeb.kr"
+          echo "Next step: workflow_dispatch -> action: promote"
+
+      - name: Cleanup
+        if: always()
+        run: docker image prune -f 2>/dev/null || true
+
+  promote:
+    runs-on: [self-hosted, codeb]
+    if: github.event.inputs.action == 'promote'
+    steps:
+      - name: Promote (switch traffic)
+        run: |
+          SLOT_FILE="/opt/codeb/slots/beauti-cms-active-slot"
+          ACTIVE_SLOT=$(cat "$SLOT_FILE" 2>/dev/null || echo "green")
+
+          if [ "$ACTIVE_SLOT" = "blue" ]; then
+            NEW_SLOT="green"; OLD_PORT="4168"; NEW_PORT="4169"
+          else
+            NEW_SLOT="blue"; OLD_PORT="4169"; NEW_PORT="4168"
+          fi
+
+          echo "Promoting: $ACTIVE_SLOT -> $NEW_SLOT (port $OLD_PORT -> $NEW_PORT)"
+
+          if ! docker inspect --format='{{.State.Running}}' "beauti-cms-production-${NEW_SLOT}" 2>/dev/null | grep -q true; then
+            echo "beauti-cms-production-${NEW_SLOT} is not running. Cannot promote."
+            exit 1
+          fi
+
+          CADDY_FILE="/etc/caddy/sites/beauti-cms-production.caddy"
+
+          sed -i "s|reverse_proxy localhost:${OLD_PORT} localhost:${NEW_PORT}|reverse_proxy localhost:${NEW_PORT} localhost:${OLD_PORT}|g" "$CADDY_FILE"
+          sed -i "s|Active Slot: ${ACTIVE_SLOT}|Active Slot: ${NEW_SLOT}|g" "$CADDY_FILE"
+          sed -i "s|X-CodeB-Slot ${ACTIVE_SLOT}|X-CodeB-Slot ${NEW_SLOT}|g" "$CADDY_FILE"
+
+          if ! sudo caddy validate --config /etc/caddy/Caddyfile 2>&1; then
+            echo "Caddy validation failed - reverting"
+            sed -i "s|reverse_proxy localhost:${NEW_PORT} localhost:${OLD_PORT}|reverse_proxy localhost:${OLD_PORT} localhost:${NEW_PORT}|g" "$CADDY_FILE"
+            sed -i "s|Active Slot: ${NEW_SLOT}|Active Slot: ${ACTIVE_SLOT}|g" "$CADDY_FILE"
+            sed -i "s|X-CodeB-Slot ${NEW_SLOT}|X-CodeB-Slot ${ACTIVE_SLOT}|g" "$CADDY_FILE"
+            exit 1
+          fi
+
+          sudo systemctl reload caddy
+          echo "$NEW_SLOT" > "$SLOT_FILE"
+
+          echo ""
+          echo "Traffic switched: $ACTIVE_SLOT -> $NEW_SLOT"
+          echo "Production URL: https://beauti.codeb.kr"
+          echo "Rollback available: workflow_dispatch -> action: rollback"
+
+  rollback:
+    runs-on: [self-hosted, codeb]
+    if: github.event.inputs.action == 'rollback'
+    steps:
+      - name: Rollback
+        run: |
+          SLOT_FILE="/opt/codeb/slots/beauti-cms-active-slot"
+          ACTIVE_SLOT=$(cat "$SLOT_FILE" 2>/dev/null || echo "green")
+
+          if [ "$ACTIVE_SLOT" = "blue" ]; then
+            ROLLBACK_TO="green"; CURRENT_PORT="4168"; ROLLBACK_PORT="4169"
+          else
+            ROLLBACK_TO="blue"; CURRENT_PORT="4169"; ROLLBACK_PORT="4168"
+          fi
+
+          echo "Rolling back: $ACTIVE_SLOT -> $ROLLBACK_TO (port $CURRENT_PORT -> $ROLLBACK_PORT)"
+
+          if ! docker inspect --format='{{.State.Running}}' "beauti-cms-production-${ROLLBACK_TO}" 2>/dev/null | grep -q true; then
+            echo "beauti-cms-production-${ROLLBACK_TO} is not running. Cannot rollback."
+            exit 1
+          fi
+
+          CADDY_FILE="/etc/caddy/sites/beauti-cms-production.caddy"
+
+          sed -i "s|reverse_proxy localhost:${CURRENT_PORT} localhost:${ROLLBACK_PORT}|reverse_proxy localhost:${ROLLBACK_PORT} localhost:${CURRENT_PORT}|g" "$CADDY_FILE"
+          sed -i "s|Active Slot: ${ACTIVE_SLOT}|Active Slot: ${ROLLBACK_TO}|g" "$CADDY_FILE"
+          sed -i "s|X-CodeB-Slot ${ACTIVE_SLOT}|X-CodeB-Slot ${ROLLBACK_TO}|g" "$CADDY_FILE"
+
+          if ! sudo caddy validate --config /etc/caddy/Caddyfile 2>&1; then
+            echo "Caddy validation failed - reverting"
+            sed -i "s|reverse_proxy localhost:${ROLLBACK_PORT} localhost:${CURRENT_PORT}|reverse_proxy localhost:${CURRENT_PORT} localhost:${ROLLBACK_PORT}|g" "$CADDY_FILE"
+            sed -i "s|Active Slot: ${ROLLBACK_TO}|Active Slot: ${ACTIVE_SLOT}|g" "$CADDY_FILE"
+            sed -i "s|X-CodeB-Slot ${ROLLBACK_TO}|X-CodeB-Slot ${ACTIVE_SLOT}|g" "$CADDY_FILE"
+            exit 1
+          fi
+
+          sudo systemctl reload caddy
+          echo "$ROLLBACK_TO" > "$SLOT_FILE"
+
+          echo ""
+          echo "Rolled back: $ACTIVE_SLOT -> $ROLLBACK_TO"
+          echo "Production URL: https://beauti.codeb.kr"

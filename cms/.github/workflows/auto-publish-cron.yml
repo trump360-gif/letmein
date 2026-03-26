@@ -1,0 +1,20 @@
+name: Auto Publish Cron
+
+on:
+  schedule:
+    # 5분마다 실행 → scheduledAt 지난 draft 게시물 발행
+    - cron: '*/5 * * * *'
+  workflow_dispatch: # 수동 실행 가능
+
+jobs:
+  publish-scheduled:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish scheduled posts
+        run: |
+          curl -X POST "${{ secrets.ADMIN_URL }}/api/v1/cron/publish" \
+            -H "Content-Type: application/json" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            --fail \
+            --silent \
+            --show-error

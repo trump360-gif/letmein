@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- 배경: 부드러운 핑크 라운드 -->
+  <rect width="32" height="32" rx="8" fill="#FFF0F4"/>
+  <!-- 꽃잎 5개 (벚꽃) -->
+  <circle cx="16" cy="10"   r="4.5" fill="#F0A0BB" opacity="0.9"/>
+  <circle cx="21.7" cy="14.1" r="4.5" fill="#F0A0BB" opacity="0.9"/>
+  <circle cx="19.5" cy="20.9" r="4.5" fill="#F0A0BB" opacity="0.9"/>
+  <circle cx="12.5" cy="20.9" r="4.5" fill="#F0A0BB" opacity="0.9"/>
+  <circle cx="10.3" cy="14.1" r="4.5" fill="#F0A0BB" opacity="0.9"/>
+  <!-- 꽃 중심 -->
+  <circle cx="16" cy="16" r="4.2" fill="#FFD4E2"/>
+  <circle cx="16" cy="16" r="1.8" fill="#E8809A"/>
+</svg>

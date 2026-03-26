@@ -1,0 +1,52 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs
+.next
+**/.next
+dist
+**/dist
+.turbo
+**/.turbo
+
+# Development
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+!README.md
+docs
+
+# Design files
+*.pen
+*.fig
+
+# Test files
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+**/__tests__
+**/coverage
+playwright-report
+
+# Misc
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
