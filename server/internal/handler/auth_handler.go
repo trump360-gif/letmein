@@ -8,15 +8,21 @@ import (
 	"github.com/letmein/server/internal/middleware"
 	"github.com/letmein/server/internal/repository"
 	"github.com/letmein/server/internal/service"
+	pkgauth "github.com/letmein/server/pkg/auth"
 )
 
 type AuthHandler struct {
-	authSvc  service.AuthService
-	userRepo repository.UserRepository
+	authSvc       service.AuthService
+	userRepo      repository.UserRepository
+	appleVerifier *pkgauth.AppleTokenVerifier
 }
 
 func NewAuthHandler(authSvc service.AuthService, userRepo repository.UserRepository) *AuthHandler {
-	return &AuthHandler{authSvc: authSvc, userRepo: userRepo}
+	return &AuthHandler{
+		authSvc:       authSvc,
+		userRepo:      userRepo,
+		appleVerifier: pkgauth.NewAppleTokenVerifier(""),
+	}
 }
 
 // POST /api/v1/auth/kakao
@@ -36,6 +42,44 @@ func (h *AuthHandler) KakaoLogin(c *gin.Context) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "withdrawn user"})
 		default:
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "kakao authentication failed"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"accessToken":  result.AccessToken,
+			"refreshToken": result.RefreshToken,
+			"isNewUser":    result.IsNewUser,
+			"user":         result.User,
+		},
+	})
+}
+
+// POST /api/v1/auth/apple
+func (h *AuthHandler) AppleLogin(c *gin.Context) {
+	var req struct {
+		IdentityToken string `json:"identityToken" binding:"required"`
+		FullName      string `json:"fullName"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "identityToken is required"})
+		return
+	}
+
+	claims, err := h.appleVerifier.VerifyIdentityToken(req.IdentityToken)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "apple authentication failed"})
+		return
+	}
+
+	result, err := h.authSvc.AppleLogin(claims.Sub, claims.Email, req.FullName)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrUserWithdrawn):
+			c.JSON(http.StatusForbidden, gin.H{"error": "withdrawn user"})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "apple login failed"})
 		}
 		return
 	}

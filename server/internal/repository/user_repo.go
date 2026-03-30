@@ -17,7 +17,9 @@ var (
 
 type UserRepository interface {
 	FindByKakaoID(kakaoID int64) (*model.User, error)
+	FindByAppleID(appleID string) (*model.User, error)
 	Create(user *model.User) (*model.User, error)
+	CreateWithApple(user *model.User) (*model.User, error)
 	UpdateNickname(userID int64, nickname string) error
 	CheckNicknameExists(nickname string) (bool, error)
 	UpdateStatus(userID int64, status string) error
@@ -40,13 +42,33 @@ func NewUserRepository(db *sql.DB) UserRepository {
 
 func (r *userRepository) FindByKakaoID(kakaoID int64) (*model.User, error) {
 	const q = `
-		SELECT id, kakao_id, nickname, profile_image, role, status, withdrawn_at, created_at, updated_at
+		SELECT id, kakao_id, apple_id, nickname, profile_image, role, status, withdrawn_at, created_at, updated_at
 		FROM users
 		WHERE kakao_id = $1`
 
 	u := &model.User{}
 	err := r.db.QueryRow(q, kakaoID).Scan(
-		&u.ID, &u.KakaoID, &u.Nickname, &u.ProfileImage,
+		&u.ID, &u.KakaoID, &u.AppleID, &u.Nickname, &u.ProfileImage,
+		&u.Role, &u.Status, &u.WithdrawnAt, &u.CreatedAt, &u.UpdatedAt,
+	)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
+func (r *userRepository) FindByAppleID(appleID string) (*model.User, error) {
+	const q = `
+		SELECT id, kakao_id, apple_id, nickname, profile_image, role, status, withdrawn_at, created_at, updated_at
+		FROM users
+		WHERE apple_id = $1`
+
+	u := &model.User{}
+	err := r.db.QueryRow(q, appleID).Scan(
+		&u.ID, &u.KakaoID, &u.AppleID, &u.Nickname, &u.ProfileImage,
 		&u.Role, &u.Status, &u.WithdrawnAt, &u.CreatedAt, &u.UpdatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -62,14 +84,35 @@ func (r *userRepository) Create(user *model.User) (*model.User, error) {
 	const q = `
 		INSERT INTO users (kakao_id, nickname, profile_image, role, status)
 		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, kakao_id, nickname, profile_image, role, status, withdrawn_at, created_at, updated_at`
+		RETURNING id, kakao_id, apple_id, nickname, profile_image, role, status, withdrawn_at, created_at, updated_at`
 
 	u := &model.User{}
 	err := r.db.QueryRow(q,
 		user.KakaoID, user.Nickname, user.ProfileImage,
 		user.Role, user.Status,
 	).Scan(
-		&u.ID, &u.KakaoID, &u.Nickname, &u.ProfileImage,
+		&u.ID, &u.KakaoID, &u.AppleID, &u.Nickname, &u.ProfileImage,
+		&u.Role, &u.Status, &u.WithdrawnAt, &u.CreatedAt, &u.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
+// CreateWithApple inserts a new user identified by an Apple user ID.
+func (r *userRepository) CreateWithApple(user *model.User) (*model.User, error) {
+	const q = `
+		INSERT INTO users (apple_id, nickname, profile_image, role, status)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id, kakao_id, apple_id, nickname, profile_image, role, status, withdrawn_at, created_at, updated_at`
+
+	u := &model.User{}
+	err := r.db.QueryRow(q,
+		user.AppleID, user.Nickname, user.ProfileImage,
+		user.Role, user.Status,
+	).Scan(
+		&u.ID, &u.KakaoID, &u.AppleID, &u.Nickname, &u.ProfileImage,
 		&u.Role, &u.Status, &u.WithdrawnAt, &u.CreatedAt, &u.UpdatedAt,
 	)
 	if err != nil {
@@ -112,13 +155,13 @@ func (r *userRepository) UpdateStatus(userID int64, status string) error {
 
 func (r *userRepository) GetByID(userID int64) (*model.User, error) {
 	const q = `
-		SELECT id, kakao_id, nickname, profile_image, role, status, withdrawn_at, created_at, updated_at
+		SELECT id, kakao_id, apple_id, nickname, profile_image, role, status, withdrawn_at, created_at, updated_at
 		FROM users
 		WHERE id = $1`
 
 	u := &model.User{}
 	err := r.db.QueryRow(q, userID).Scan(
-		&u.ID, &u.KakaoID, &u.Nickname, &u.ProfileImage,
+		&u.ID, &u.KakaoID, &u.AppleID, &u.Nickname, &u.ProfileImage,
 		&u.Role, &u.Status, &u.WithdrawnAt, &u.CreatedAt, &u.UpdatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -176,7 +219,7 @@ func (r *userRepository) RestoreWithdrawal(userID int64) error {
 // (withdrawn_at < before).
 func (r *userRepository) GetWithdrawingUsers(before time.Time) ([]*model.User, error) {
 	const q = `
-		SELECT id, kakao_id, nickname, profile_image, role, status, withdrawn_at, created_at, updated_at
+		SELECT id, kakao_id, apple_id, nickname, profile_image, role, status, withdrawn_at, created_at, updated_at
 		FROM users
 		WHERE status = 'withdrawing'
 		  AND withdrawn_at < $1`
@@ -191,7 +234,7 @@ func (r *userRepository) GetWithdrawingUsers(before time.Time) ([]*model.User, e
 	for rows.Next() {
 		u := &model.User{}
 		if err := rows.Scan(
-			&u.ID, &u.KakaoID, &u.Nickname, &u.ProfileImage,
+			&u.ID, &u.KakaoID, &u.AppleID, &u.Nickname, &u.ProfileImage,
 			&u.Role, &u.Status, &u.WithdrawnAt, &u.CreatedAt, &u.UpdatedAt,
 		); err != nil {
 			return nil, err
@@ -253,6 +296,7 @@ func (r *userRepository) PurgeWithdrawnUser(userID int64) error {
 		UPDATE users
 		SET nickname      = NULL,
 		    profile_image = NULL,
+		    apple_id      = NULL,
 		    status        = 'withdrawn',
 		    updated_at    = $2
 		WHERE id = $1`, userID, time.Now()); err != nil {

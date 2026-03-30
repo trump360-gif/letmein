@@ -107,6 +107,7 @@ body{background:#0D0D0D;color:#fff;font-family:-apple-system,BlinkMacSystemFont,
 		{
 			// Public endpoints
 			auth.POST("/kakao", authHandler.KakaoLogin)
+			auth.POST("/apple", authHandler.AppleLogin)
 			auth.POST("/dev-login", authHandler.DevLogin) // DEV ONLY
 			auth.POST("/refresh", authHandler.RefreshToken)
 			auth.GET("/nickname/check", authHandler.CheckNickname)
@@ -196,6 +197,10 @@ body{background:#0D0D0D;color:#fff;font-family:-apple-system,BlinkMacSystemFont,
 		chatSvc := service.NewChatService(chatRepo, hospitalRepo, centrifugoMgr, cfg.CentrifugoAPIURL, cfg.CentrifugoAPIKey)
 		chatH := NewChatHandler(chatSvc)
 
+		// Visit card dependencies (Phase 4 extension)
+		visitCardRepo := repository.NewVisitCardRepository(db)
+		visitCardH := NewVisitCardHandler(visitCardRepo, chatRepo)
+
 		chat := v1.Group("/chat")
 		{
 			// User endpoints (auth required)
@@ -207,9 +212,18 @@ body{background:#0D0D0D;color:#fff;font-family:-apple-system,BlinkMacSystemFont,
 			chat.POST("/rooms/:id/close", authRequired, chatH.CloseRoom)
 			chat.GET("/token", authRequired, chatH.GetCentrifugoToken)
 
+			// Visit card - user endpoints (auth required)
+			chat.GET("/rooms/:id/visit-cards", authRequired, visitCardH.ListVisitCards)
+			chat.POST("/rooms/:id/visit-card/:cardId/accept", authRequired, visitCardH.AcceptVisitCard)
+			chat.POST("/rooms/:id/visit-card/:cardId/decline", authRequired, visitCardH.DeclineVisitCard)
+
 			// Hospital endpoints (hospital role required)
 			chatHospitalOnly := middleware.HospitalRequired(jwtManager, hospitalRepo)
 			chat.GET("/rooms/hospital", chatHospitalOnly, chatH.GetHospitalRooms)
+
+			// Visit card - hospital endpoints (hospital role required)
+			chat.POST("/rooms/:id/visit-card", chatHospitalOnly, visitCardH.CreateVisitCard)
+			chat.GET("/rooms/:id/visit-cards/hospital", chatHospitalOnly, visitCardH.ListVisitCardsHospital)
 		}
 
 		// Community routes (Phase 5)
@@ -291,7 +305,21 @@ body{background:#0D0D0D;color:#fff;font-family:-apple-system,BlinkMacSystemFont,
 			episodes.GET("/hero", castH.GetHeroEpisodes)
 		}
 
-		// Background schedulers (non-blocking)
+		// Notification routes
+			notifRepo := repository.NewNotificationRepository(db)
+			notifSvc := service.NewNotificationService(notifRepo)
+			notifH := NewNotificationHandler(notifSvc)
+
+			notifs := v1.Group("/notifications")
+			{
+				notifs.GET("", authRequired, notifH.ListNotifications)
+				notifs.PUT("/:id/read", authRequired, notifH.MarkRead)
+				notifs.GET("/unread-count", authRequired, notifH.GetUnreadCount)
+				notifs.GET("/settings", authRequired, notifH.GetSettings)
+				notifs.PUT("/settings", authRequired, notifH.UpdateSettings)
+			}
+
+			// Background schedulers (non-blocking)
 		scheduler.StartAll(scheduler.Dependencies{
 			UserRepo:    userRepo,
 			ConsultRepo: consultRepo,

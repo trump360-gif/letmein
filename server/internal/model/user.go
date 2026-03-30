@@ -5,6 +5,7 @@ import "time"
 type User struct {
 	ID           int64      `json:"id"`
 	KakaoID      int64      `json:"kakao_id"`
+	AppleID      *string    `json:"apple_id,omitempty"`
 	Nickname     *string    `json:"nickname"`
 	ProfileImage *string    `json:"profile_image"`
 	Role         string     `json:"role"`

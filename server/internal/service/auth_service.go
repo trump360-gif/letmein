@@ -13,10 +13,10 @@ import (
 )
 
 var (
-	ErrInvalidRefreshToken  = errors.New("invalid or expired refresh token")
-	ErrUserNotFound         = errors.New("user not found")
-	ErrUserWithdrawn        = errors.New("withdrawn user")
-	ErrNotWithdrawing       = errors.New("account is not in withdrawing state")
+	ErrInvalidRefreshToken = errors.New("invalid or expired refresh token")
+	ErrUserNotFound        = errors.New("user not found")
+	ErrUserWithdrawn       = errors.New("withdrawn user")
+	ErrNotWithdrawing      = errors.New("account is not in withdrawing state")
 )
 
 const refreshTokenTTL = 14 * 24 * time.Hour
@@ -30,6 +30,7 @@ type LoginResult struct {
 
 type AuthService interface {
 	KakaoLogin(kakaoAccessToken string) (*LoginResult, error)
+	AppleLogin(appleUserID string, email string, fullName string) (*LoginResult, error)
 	DevLogin(userID int64) (*LoginResult, error)
 	RefreshToken(refreshToken string) (string, error)
 	Logout(userID int64) error
@@ -80,6 +81,57 @@ func (s *authService) KakaoLogin(kakaoAccessToken string) (*LoginResult, error) 
 		}
 	} else if err != nil {
 		return nil, fmt.Errorf("find user: %w", err)
+	}
+
+	if user.Status == "withdrawn" {
+		return nil, ErrUserWithdrawn
+	}
+
+	accessToken, err := s.jwtManager.GenerateAccessToken(user.ID, user.Role)
+	if err != nil {
+		return nil, fmt.Errorf("generate access token: %w", err)
+	}
+
+	refreshToken, err := s.jwtManager.GenerateRefreshToken(user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("generate refresh token: %w", err)
+	}
+
+	key := fmt.Sprintf("refresh:%d", user.ID)
+	if err := s.rdb.Set(context.Background(), key, refreshToken, refreshTokenTTL).Err(); err != nil {
+		return nil, fmt.Errorf("store refresh token: %w", err)
+	}
+
+	return &LoginResult{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		IsNewUser:    isNewUser,
+		User:         user,
+	}, nil
+}
+
+func (s *authService) AppleLogin(appleUserID string, email string, fullName string) (*LoginResult, error) {
+	isNewUser := false
+	user, err := s.userRepo.FindByAppleID(appleUserID)
+	if errors.Is(err, repository.ErrNotFound) {
+		// New user: create record.
+		isNewUser = true
+		newUser := &model.User{
+			AppleID: &appleUserID,
+			Role:    "user",
+			Status:  "active",
+		}
+		// Seed nickname from fullName when provided on first sign-in.
+		// The user can always update it later via POST /auth/nickname.
+		if fullName != "" {
+			newUser.Nickname = &fullName
+		}
+		user, err = s.userRepo.CreateWithApple(newUser)
+		if err != nil {
+			return nil, fmt.Errorf("create apple user: %w", err)
+		}
+	} else if err != nil {
+		return nil, fmt.Errorf("find apple user: %w", err)
 	}
 
 	if user.Status == "withdrawn" {
