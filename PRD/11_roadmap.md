@@ -54,6 +54,18 @@
 - 레퍼럴 이벤트 → 아래 명세
 - CMS 전체 기능 + 통계 대시보드 + 출연자 관리 → [07_cms.md](./07_cms.md)
 - Apple 로그인 → [06_auth.md](./06_auth.md)
+- **리뷰 시스템** (별점 + 사진 + 매칭 기반 자격) → [14_review.md](./14_review.md)
+- **푸시 알림 시스템** (FCM, 14개 이벤트 매트릭스) → [15_notification.md](./15_notification.md)
+- **Before/After 슬라이더** 비교 뷰 → [03_community.md](./03_community.md)
+- **방문 예약 카드** (채팅 내 인터랙티브 카드) → [05_chat.md](./05_chat.md)
+- **Cursor 기반 페이징** 전체 확대 적용 → [09_tech.md](./09_tech.md)
+
+---
+
+## MVP-B 추가 *(v2.2 신규)*
+
+- **상담 임시저장** (SQLite 로컬 저장 → 이어하기) → [02_consultation.md](./02_consultation.md)
+- **라이트 테마** (다크/라이트/시스템 토글) → [13_design.md](./13_design.md)
 
 ---
 

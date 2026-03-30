@@ -73,6 +73,38 @@ Cloudflare R2                      Cloudflare R2                     Cloudflare 
 | 푸시 알림 | FCM (Firebase Cloud Messaging) | → [05_chat.md](./05_chat.md), [02_consultation.md](./02_consultation.md) |
 | 키워드 필터링 | 서버사이드 정규식 (Go) | → [02_consultation.md](./02_consultation.md) |
 
+## API 페이징 전략 *(v2.2 추가)*
+
+> 현재 채팅 메시지만 cursor 페이징 적용 중. 전체 리스트 API로 확대 적용.
+
+| 방식 | 적용 대상 | 비고 |
+|------|----------|------|
+| **Cursor 기반** (권장) | 채팅 메시지, 알림, 커뮤니티 피드, 병원 검색 결과 | 대규모 데이터에서 성능 우수, offset 스킵 없음 |
+| Offset 기반 (유지) | 관리자 CMS 목록 (총 개수 표시 필요) | 총 건수 + 페이지 번호 필요한 경우만 |
+
+**Cursor 페이징 표준 응답 포맷**
+```json
+{
+  "data": [ ... ],
+  "meta": {
+    "nextCursor": "eyJpZCI6MTIzfQ",  // base64 encoded, null이면 마지막 페이지
+    "hasMore": true,
+    "limit": 20
+  }
+}
+```
+
+**요청 파라미터**: `?cursor=<token>&limit=20`
+- `cursor` 미전달 시 첫 페이지
+- `limit` 기본값 20, 최대 100
+
+**전환 우선순위**
+1. P0: 알림 목록, 채팅 메시지 (이미 적용)
+2. P1: 커뮤니티 게시글/댓글, 병원 검색, 리뷰 목록
+3. P2: 상담 목록, 출연자 스토리
+
+---
+
 ## 모니터링 및 에러 트래킹
 
 | 영역 | 기술 | 비고 |
