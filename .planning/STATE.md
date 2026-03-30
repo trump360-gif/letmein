@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: 03-hospital-profile-consult plan 1 완료 (HPROF-01~04)
-last_updated: "2026-03-30T08:13:19.638Z"
+stopped_at: Completed 04-hospital-chat-ads Plan 2 (HAD-01~05)
+last_updated: "2026-03-30T08:13:36.313Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 5
@@ -58,6 +58,7 @@ Progress: [██░░░░░░░░] 20%
 | Phase 03-hospital-profile-consult P2 | 20 | 2 tasks | 7 files |
 | Phase 04-hospital-chat-ads P1 | 246 | 2 tasks | 11 files |
 | Phase 03-hospital-profile-consult P1 | 20m | 2 tasks | 11 files |
+| Phase 04-hospital-chat-ads P2 | 20 | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,8 @@ Recent decisions affecting current work:
 - [Phase 03-hospital-profile-consult]: dnd-kit optimistic local state (localDoctors) provides instant DnD feedback before server confirms sort order
 - [Phase 04-hospital-chat-ads]: Prisma 직접 조회 사용 — Go 서버 프록시 아님, session.ts에 hospitalJwt 없고 기존 패턴과 일치
 - [Phase 04-hospital-chat-ads]: visit_cards 테이블: $queryRaw 사용 (Prisma 모델 없음)
+- [Phase 04-hospital-chat-ads]: Route Handlers use Prisma directly (not Go proxy) — matching existing hospital route pattern; CMS session has no hospitalJwt
+- [Phase 04-hospital-chat-ads]: AdCampaign creation defaults: placement='chat', cpmPrice=1000 (schema required non-nullable fields not in plan spec)
 
 ### Pending Todos
 
@@ -96,6 +99,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-30T08:20:00Z
-Stopped at: 03-hospital-profile-consult plan 1 완료 (HPROF-01~04)
+Last session: 2026-03-30T08:13:36.311Z
+Stopped at: Completed 04-hospital-chat-ads Plan 2 (HAD-01~05)
 Resume file: None
