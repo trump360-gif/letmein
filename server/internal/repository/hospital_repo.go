@@ -16,7 +16,7 @@ type SearchParams struct {
 	CategoryID *int
 	Region     string
 	SortBy     string
-	Page       int
+	Cursor     int64 // cursor-based: fetch hospitals with id < Cursor (0 = first page)
 	Limit      int
 }
 
@@ -33,7 +33,7 @@ type HospitalRepository interface {
 	GetByUserID(userID int64) (*model.Hospital, error)
 	Update(hospital *model.Hospital) error
 	UpdateStatus(id int64, status string) error
-	Search(params SearchParams) ([]*model.HospitalListItem, int, error)
+	Search(params SearchParams) ([]*model.HospitalListItem, int64, error)
 	GetSpecialties(hospitalID int64) ([]model.ProcedureCategory, error)
 	UpdateRole(userID int64) error
 	GetDashboardStats(hospitalID int64) (*DashboardStats, error)
@@ -200,10 +200,12 @@ func (r *hospitalRepository) UpdateStatus(id int64, status string) error {
 	return nil
 }
 
-func (r *hospitalRepository) Search(params SearchParams) ([]*model.HospitalListItem, int, error) {
-	if params.Page < 1 {
-		params.Page = 1
-	}
+// Search returns a page of hospitals matching params using cursor-based pagination.
+//
+// cursor=0  → first page (no id filter)
+// cursor=N  → fetch hospitals with id < N
+// Returns (items, nextCursor, error). nextCursor==0 means no more pages.
+func (r *hospitalRepository) Search(params SearchParams) ([]*model.HospitalListItem, int64, error) {
 	if params.Limit < 1 || params.Limit > 100 {
 		params.Limit = 20
 	}
@@ -234,14 +236,14 @@ func (r *hospitalRepository) Search(params SearchParams) ([]*model.HospitalListI
 		argIdx++
 	}
 
-	where := strings.Join(conditions, " AND ")
-
-	// Count query.
-	countQ := fmt.Sprintf(`SELECT COUNT(*) FROM hospitals h WHERE %s`, where)
-	var total int
-	if err := r.db.QueryRow(countQ, args...).Scan(&total); err != nil {
-		return nil, 0, fmt.Errorf("count hospitals: %w", err)
+	// Cursor: filter by id < cursor for stable id-based pagination.
+	if params.Cursor > 0 {
+		conditions = append(conditions, fmt.Sprintf("h.id < $%d", argIdx))
+		args = append(args, params.Cursor)
+		argIdx++
 	}
+
+	where := strings.Join(conditions, " AND ")
 
 	// Determine secondary ORDER BY (primary is always premium-first).
 	secondaryOrder := "h.name ASC"
@@ -249,7 +251,6 @@ func (r *hospitalRepository) Search(params SearchParams) ([]*model.HospitalListI
 		secondaryOrder = "review_count DESC, h.name ASC"
 	}
 
-	offset := (params.Page - 1) * params.Limit
 	// Premium hospitals are sorted first; within the premium group the secondary
 	// order applies. Only the top 3 premium results are guaranteed to appear at
 	// the head — this is enforced at the query level by ordering premium DESC.
@@ -262,9 +263,9 @@ func (r *hospitalRepository) Search(params SearchParams) ([]*model.HospitalListI
 		WHERE %s
 		GROUP BY h.id
 		ORDER BY h.is_premium DESC, %s
-		LIMIT $%d OFFSET $%d`, where, secondaryOrder, argIdx, argIdx+1)
+		LIMIT $%d`, where, secondaryOrder, argIdx)
 
-	args = append(args, params.Limit, offset)
+	args = append(args, params.Limit)
 
 	rows, err := r.db.Query(dataQ, args...)
 	if err != nil {
@@ -297,10 +298,16 @@ func (r *hospitalRepository) Search(params SearchParams) ([]*model.HospitalListI
 	}
 
 	if items == nil {
-		items = []*model.HospitalListItem{}
+		return []*model.HospitalListItem{}, 0, nil
 	}
 
-	return items, total, nil
+	// next_cursor is the ID of the last item; 0 if this is the last page.
+	var nextCursor int64
+	if len(items) == params.Limit {
+		nextCursor = items[len(items)-1].ID
+	}
+
+	return items, nextCursor, nil
 }
 
 func (r *hospitalRepository) GetSpecialties(hospitalID int64) ([]model.ProcedureCategory, error) {

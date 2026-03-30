@@ -11,7 +11,7 @@ import (
 type PollRepository interface {
 	Create(poll *model.Poll, options []model.PollOption) (*model.Poll, error)
 	GetByID(id int64, currentUserID int64) (*model.PollDetail, error)
-	List(page, limit int) ([]*model.PollListItem, int, error)
+	List(cursor int64, limit int) ([]*model.PollListItem, int64, error)
 	Vote(pollID, optionID, userID int64) error
 	HasVoted(pollID, userID int64) (bool, *int64, error)
 	Close(pollID int64) error
@@ -158,34 +158,48 @@ func (r *pollRepository) getOptions(pollID int64) ([]model.PollOption, error) {
 }
 
 // ──────────────────────────────────────────────
-// List
+// List (cursor-based pagination)
+//
+// cursor=0  → first page (no filter)
+// cursor=N  → fetch polls with id < N, ordered by id DESC
+// Returns (items, nextCursor, error).
+// nextCursor == 0 means no more pages.
 // ──────────────────────────────────────────────
 
-func (r *pollRepository) List(page, limit int) ([]*model.PollListItem, int, error) {
-	if page < 1 {
-		page = 1
-	}
+func (r *pollRepository) List(cursor int64, limit int) ([]*model.PollListItem, int64, error) {
 	if limit < 1 || limit > 100 {
 		limit = 20
 	}
 
-	var total int
-	if err := r.db.QueryRow(`SELECT COUNT(*) FROM polls`).Scan(&total); err != nil {
-		return nil, 0, fmt.Errorf("count polls: %w", err)
+	var (
+		rows *sql.Rows
+		err  error
+	)
+
+	if cursor > 0 {
+		const dataQ = `
+			SELECT
+				p.id, p.user_id,
+				COALESCE(u.nickname, '알 수 없음') AS author_nickname,
+				p.title, p.poll_type, p.status, p.ends_at, p.vote_count, p.created_at
+			FROM polls p
+			LEFT JOIN users u ON u.id = p.user_id
+			WHERE p.id < $1
+			ORDER BY p.id DESC
+			LIMIT $2`
+		rows, err = r.db.Query(dataQ, cursor, limit)
+	} else {
+		const dataQ = `
+			SELECT
+				p.id, p.user_id,
+				COALESCE(u.nickname, '알 수 없음') AS author_nickname,
+				p.title, p.poll_type, p.status, p.ends_at, p.vote_count, p.created_at
+			FROM polls p
+			LEFT JOIN users u ON u.id = p.user_id
+			ORDER BY p.id DESC
+			LIMIT $1`
+		rows, err = r.db.Query(dataQ, limit)
 	}
-
-	offset := (page - 1) * limit
-	const dataQ = `
-		SELECT
-			p.id, p.user_id,
-			COALESCE(u.nickname, '알 수 없음') AS author_nickname,
-			p.title, p.poll_type, p.status, p.ends_at, p.vote_count, p.created_at
-		FROM polls p
-		LEFT JOIN users u ON u.id = p.user_id
-		ORDER BY p.created_at DESC
-		LIMIT $1 OFFSET $2`
-
-	rows, err := r.db.Query(dataQ, limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list polls: %w", err)
 	}
@@ -209,7 +223,7 @@ func (r *pollRepository) List(page, limit int) ([]*model.PollListItem, int, erro
 	}
 
 	if len(items) == 0 {
-		return []*model.PollListItem{}, total, nil
+		return []*model.PollListItem{}, 0, nil
 	}
 
 	// Batch-fetch top 2 options per poll to avoid N+1.
@@ -228,36 +242,7 @@ func (r *pollRepository) List(page, limit int) ([]*model.PollListItem, int, erro
 		placeholders += fmt.Sprintf("$%d", i+1)
 	}
 
-	optQ := fmt.Sprintf(`
-		SELECT DISTINCT ON (poll_id) poll_id, id, text, COALESCE(image_url, ''), vote_count, sort_order
-		FROM poll_options
-		WHERE poll_id IN (%s)
-		ORDER BY poll_id, sort_order ASC, id ASC`, placeholders)
-
-	optRows, err := r.db.Query(optQ, pollIDs...)
-	if err != nil {
-		return nil, 0, fmt.Errorf("batch options: %w", err)
-	}
-	defer optRows.Close()
-
-	// Collect first option per poll, then second pass for second option.
-	firstOpts := make(map[int64]model.PollOption)
-	for optRows.Next() {
-		var pollID int64
-		var opt model.PollOption
-		if err := optRows.Scan(
-			&pollID, &opt.ID, &opt.Text, &opt.ImageURL, &opt.VoteCount, &opt.SortOrder,
-		); err != nil {
-			return nil, 0, err
-		}
-		opt.PollID = pollID
-		firstOpts[pollID] = opt
-	}
-	if err := optRows.Err(); err != nil {
-		return nil, 0, err
-	}
-
-	// Now fetch top 2 options per poll in a second query.
+	// Fetch top 2 options per poll.
 	top2Q := fmt.Sprintf(`
 		SELECT poll_id, id, text, COALESCE(image_url, ''), vote_count, sort_order
 		FROM (
@@ -292,7 +277,13 @@ func (r *pollRepository) List(page, limit int) ([]*model.PollListItem, int, erro
 		return nil, 0, err
 	}
 
-	return items, total, nil
+	// next_cursor is the ID of the last item; 0 if this is the last page.
+	var nextCursor int64
+	if len(items) == limit {
+		nextCursor = items[len(items)-1].ID
+	}
+
+	return items, nextCursor, nil
 }
 
 // ──────────────────────────────────────────────

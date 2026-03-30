@@ -9,9 +9,9 @@ import (
 )
 
 var (
-	ErrPollNotFound  = errors.New("poll not found")
-	ErrAlreadyVoted  = errors.New("already voted on this poll")
-	ErrPollClosed    = errors.New("poll is already closed")
+	ErrPollNotFound = errors.New("poll not found")
+	ErrAlreadyVoted = errors.New("already voted on this poll")
+	ErrPollClosed   = errors.New("poll is already closed")
 )
 
 // ──────────────────────────────────────────────
@@ -38,7 +38,7 @@ type CreatePollOptionInput struct {
 type PollService interface {
 	CreatePoll(userID int64, input CreatePollInput) (*model.Poll, error)
 	GetPoll(id int64, currentUserID int64) (*model.PollDetail, error)
-	ListPolls(page, limit int) ([]*model.PollListItem, int, error)
+	ListPolls(cursor int64, limit int) ([]*model.PollListItem, int64, error)
 	Vote(pollID, optionID, userID int64) error
 	ClosePoll(pollID, userID int64) error
 }
@@ -88,8 +88,8 @@ func (s *pollService) GetPoll(id int64, currentUserID int64) (*model.PollDetail,
 	return pd, err
 }
 
-func (s *pollService) ListPolls(page, limit int) ([]*model.PollListItem, int, error) {
-	return s.pollRepo.List(page, limit)
+func (s *pollService) ListPolls(cursor int64, limit int) ([]*model.PollListItem, int64, error) {
+	return s.pollRepo.List(cursor, limit)
 }
 
 func (s *pollService) Vote(pollID, optionID, userID int64) error {

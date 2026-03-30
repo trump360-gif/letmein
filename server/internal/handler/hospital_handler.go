@@ -165,6 +165,12 @@ func (h *HospitalHandler) GetDashboard(c *gin.Context) {
 }
 
 // GET /api/v1/hospitals
+// Query params:
+//
+//	cursor=<id>   — return hospitals with id < cursor (omit or 0 for first page)
+//	limit=20      — max items per page (1–100)
+//	q, region, category_id, sort — existing filters unchanged
+//	page=1        — legacy param: treated as first page (other values ignored)
 func (h *HospitalHandler) Search(c *gin.Context) {
 	params := service.HospitalSearchParams{
 		Query:  c.Query("q"),
@@ -181,21 +187,19 @@ func (h *HospitalHandler) Search(c *gin.Context) {
 		params.CategoryID = &catID
 	}
 
-	page := 1
-	if pageStr := c.Query("page"); pageStr != "" {
-		if v, err := strconv.Atoi(pageStr); err == nil && v > 0 {
-			page = v
+	// cursor param: 0 means first page.
+	if cursorStr := c.Query("cursor"); cursorStr != "" {
+		if v, err := strconv.ParseInt(cursorStr, 10, 64); err == nil && v > 0 {
+			params.Cursor = v
 		}
 	}
-	params.Page = page
 
-	limit := 20
+	params.Limit = 20
 	if limitStr := c.Query("limit"); limitStr != "" {
 		if v, err := strconv.Atoi(limitStr); err == nil && v > 0 && v <= 100 {
-			limit = v
+			params.Limit = v
 		}
 	}
-	params.Limit = limit
 
 	result, err := h.hospitalSvc.Search(params)
 	if err != nil {

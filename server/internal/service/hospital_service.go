@@ -42,21 +42,20 @@ type HospitalSearchParams struct {
 	CategoryID *int
 	Region     string
 	SortBy     string
-	Page       int
+	Cursor     int64 // cursor-based pagination (0 = first page)
 	Limit      int
 }
 
-// PaginatedHospitals is the paginated search result.
-type PaginatedHospitals struct {
-	Data []*model.HospitalListItem `json:"data"`
-	Meta PaginationMeta            `json:"meta"`
+// CursorMeta holds cursor-based pagination metadata.
+type CursorMeta struct {
+	NextCursor int64 `json:"next_cursor"`
+	Limit      int   `json:"limit"`
 }
 
-// PaginationMeta holds page metadata.
-type PaginationMeta struct {
-	Total int `json:"total"`
-	Page  int `json:"page"`
-	Limit int `json:"limit"`
+// PaginatedHospitals is the cursor-paginated search result.
+type PaginatedHospitals struct {
+	Data []*model.HospitalListItem `json:"data"`
+	Meta CursorMeta                `json:"meta"`
 }
 
 type HospitalService interface {
@@ -195,9 +194,6 @@ func (s *hospitalService) GetProfileByUserID(userID int64) (*model.Hospital, err
 }
 
 func (s *hospitalService) Search(params HospitalSearchParams) (*PaginatedHospitals, error) {
-	if params.Page < 1 {
-		params.Page = 1
-	}
 	if params.Limit < 1 || params.Limit > 100 {
 		params.Limit = 20
 	}
@@ -207,21 +203,20 @@ func (s *hospitalService) Search(params HospitalSearchParams) (*PaginatedHospita
 		CategoryID: params.CategoryID,
 		Region:     params.Region,
 		SortBy:     params.SortBy,
-		Page:       params.Page,
+		Cursor:     params.Cursor,
 		Limit:      params.Limit,
 	}
 
-	items, total, err := s.hospitalRepo.Search(repoParams)
+	items, nextCursor, err := s.hospitalRepo.Search(repoParams)
 	if err != nil {
 		return nil, fmt.Errorf("search hospitals: %w", err)
 	}
 
 	return &PaginatedHospitals{
 		Data: items,
-		Meta: PaginationMeta{
-			Total: total,
-			Page:  params.Page,
-			Limit: params.Limit,
+		Meta: CursorMeta{
+			NextCursor: nextCursor,
+			Limit:      params.Limit,
 		},
 	}, nil
 }

@@ -48,6 +48,13 @@ type SelectHospitalResult struct {
 	ChatRoomID int64 `json:"chat_room_id,omitempty"`
 }
 
+// PaginationMeta holds offset-based pagination metadata for consultation lists.
+type PaginationMeta struct {
+	Total int `json:"total"`
+	Page  int `json:"page"`
+	Limit int `json:"limit"`
+}
+
 // PaginatedConsultations is a generic paginated result for consultation requests.
 type PaginatedConsultations struct {
 	Data []*model.ConsultationRequestWithDetails `json:"data"`

@@ -52,7 +52,7 @@ type CreateReportInput struct {
 type PostService interface {
 	CreatePost(userID int64, input CreatePostInput) (*model.Post, error)
 	GetPost(id int64) (*model.PostDetail, error)
-	ListPosts(params repository.PostListParams) ([]*model.PostListItem, int, error)
+	ListPosts(params repository.PostListParams) ([]*model.PostListItem, int64, error)
 	DeletePost(userID, postID int64) error
 
 	AddComment(userID int64, input CreateCommentInput) (*model.Comment, error)
@@ -127,7 +127,7 @@ func (s *postService) GetPost(id int64) (*model.PostDetail, error) {
 	return pd, err
 }
 
-func (s *postService) ListPosts(params repository.PostListParams) ([]*model.PostListItem, int, error) {
+func (s *postService) ListPosts(params repository.PostListParams) ([]*model.PostListItem, int64, error) {
 	return s.postRepo.List(params)
 }
 
