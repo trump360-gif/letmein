@@ -1,5 +1,15 @@
 // ==================== LetMeIn Types ====================
 
+// ── 병원 포탈 사용자 ──
+
+export interface HospitalUser {
+  id: number
+  email: string
+  name: string
+  role: 'hospital'
+  hospitalId: number
+}
+
 // ── 병원 ──
 
 export type HospitalStatus = 'pending' | 'approved' | 'rejected' | 'suspended'

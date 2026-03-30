@@ -21,3 +21,39 @@ export async function getSessionAdminId(): Promise<bigint | null> {
     return null
   }
 }
+
+/**
+ * 현재 세션의 role을 반환한다. ('admin' | 'hospital' | null)
+ */
+export async function getSessionRole(): Promise<'admin' | 'hospital' | null> {
+  try {
+    const cookieStore = cookies()
+    const token = cookieStore.get('admin_token')?.value
+    if (!token) return null
+    const { payload } = await jwtVerify(token, SECRET)
+    const role = payload.role as string | undefined
+    if (role === 'admin' || role === 'hospital') return role
+    return null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * role=hospital 세션에서 hospitalId를 BigInt로 반환한다.
+ * role이 hospital이 아니거나 hospitalId가 없으면 null을 반환한다.
+ */
+export async function getSessionHospitalId(): Promise<bigint | null> {
+  try {
+    const cookieStore = cookies()
+    const token = cookieStore.get('admin_token')?.value
+    if (!token) return null
+    const { payload } = await jwtVerify(token, SECRET)
+    if (payload.role !== 'hospital') return null
+    const hospitalId = payload.hospitalId as string | undefined
+    if (!hospitalId) return null
+    return BigInt(hospitalId)
+  } catch {
+    return null
+  }
+}
