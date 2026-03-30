@@ -7,6 +7,7 @@ import {
   HeartHandshake,
   MessageSquare,
   Crown,
+  Megaphone,
   LogOut,
 } from 'lucide-react'
 import { cn } from '@letmein/utils'
@@ -24,6 +25,7 @@ const navigation: NavItem[] = [
   { name: '상담 관리', href: '/hospital/consultations', icon: HeartHandshake },
   { name: '채팅', href: '/hospital/chat', icon: MessageSquare },
   { name: '프리미엄', href: '/hospital/premium', icon: Crown },
+  { name: '광고 관리', href: '/hospital/ads', icon: Megaphone },
 ]
 
 export function HospitalSidebar() {
