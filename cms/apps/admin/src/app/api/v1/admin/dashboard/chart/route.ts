@@ -10,94 +10,55 @@ export async function GET(request: NextRequest) {
     startDate.setDate(startDate.getDate() - days)
     startDate.setHours(0, 0, 0, 0)
 
-    // StatsDaily 테이블에서 기간별 데이터 조회
-    const statsDaily = await prisma.statsDaily.findMany({
-      where: {
-        date: { gte: startDate },
-      },
-      orderBy: { date: 'asc' },
-    })
+    // 일별 상담 요청 수
+    const consultations = await prisma.$queryRaw<Array<{ date: string; count: bigint }>>`
+      SELECT DATE(created_at) as date, COUNT(*) as count
+      FROM consultation_requests
+      WHERE created_at >= ${startDate}
+      GROUP BY DATE(created_at)
+      ORDER BY date ASC
+    `
 
-    // 게시판별 활성도 (최근 기간 동안 게시물 수 기준 상위 10개)
-    const boardActivity = await prisma.post.groupBy({
-      by: ['boardId'],
-      where: {
-        createdAt: { gte: startDate },
-        deletedAt: null,
-      },
-      _count: { id: true },
-      orderBy: { _count: { id: 'desc' } },
-      take: 10,
-    })
+    // 일별 신규 유저 수
+    const users = await prisma.$queryRaw<Array<{ date: string; count: bigint }>>`
+      SELECT DATE(created_at) as date, COUNT(*) as count
+      FROM users
+      WHERE created_at >= ${startDate}
+      GROUP BY DATE(created_at)
+      ORDER BY date ASC
+    `
 
-    // 게시판 이름 조회
-    const boardIds = boardActivity.map((b) => b.boardId)
-    const boards = await prisma.board.findMany({
-      where: { id: { in: boardIds } },
-      select: { id: true, slug: true, nameKey: true },
-    })
+    // 날짜 배열 생성
+    const daily: Array<{ date: string; consultations: number; newUsers: number }> = []
+    const consultMap = new Map(consultations.map((c) => [
+      new Date(c.date).toISOString().split('T')[0],
+      Number(c.count),
+    ]))
+    const userMap = new Map(users.map((u) => [
+      new Date(u.date).toISOString().split('T')[0],
+      Number(u.count),
+    ]))
 
-    const boardMap = new Map(boards.map((b) => [Number(b.id), b]))
-
-    // AI 로그 일별 집계
-    const aiLogs = await prisma.autoPostLog.findMany({
-      where: { executedAt: { gte: startDate } },
-      select: { status: true, executedAt: true },
-    })
-
-    // 날짜별로 그룹핑
-    const aiByDate = new Map<string, { success: number; failed: number }>()
-    for (const log of aiLogs) {
-      const dateStr = log.executedAt.toISOString().split('T')[0]
-      const entry = aiByDate.get(dateStr) ?? { success: 0, failed: 0 }
-      if (log.status === 'SUCCESS') entry.success++
-      else entry.failed++
-      aiByDate.set(dateStr, entry)
-    }
-
-    // startDate부터 오늘까지 날짜 배열 생성
-    const aiDaily: Array<{ date: string; success: number; failed: number }> = []
     const cursor = new Date(startDate)
-    const todayEnd = new Date()
-    while (cursor <= todayEnd) {
+    const today = new Date()
+    while (cursor <= today) {
       const dateStr = cursor.toISOString().split('T')[0]
-      const entry = aiByDate.get(dateStr) ?? { success: 0, failed: 0 }
-      aiDaily.push({ date: dateStr, ...entry })
+      daily.push({
+        date: dateStr,
+        consultations: consultMap.get(dateStr) ?? 0,
+        newUsers: userMap.get(dateStr) ?? 0,
+      })
       cursor.setDate(cursor.getDate() + 1)
     }
 
     return NextResponse.json({
       success: true,
-      data: {
-        // 일별 추이 데이터
-        daily: statsDaily.map((s) => ({
-          date: s.date.toISOString().split('T')[0],
-          newUsers: s.newUsers,
-          newPosts: s.newPosts,
-          newComments: s.newComments,
-          newReports: s.newReports,
-          activeUsers: s.activeUsers,
-        })),
-        // AI 생성 추이
-        aiDaily,
-        // 게시판별 활성도
-        boardActivity: boardActivity.map((b) => {
-          const board = boardMap.get(Number(b.boardId))
-          return {
-            boardId: b.boardId.toString(),
-            name: board?.nameKey ?? board?.slug ?? `Board #${b.boardId}`,
-            postCount: b._count.id,
-          }
-        }),
-      },
+      data: { daily },
     })
   } catch (error) {
-    console.error('Failed to fetch dashboard chart data:', error)
+    console.error('Failed to fetch chart data:', error)
     return NextResponse.json(
-      {
-        success: false,
-        error: { code: 'INTERNAL_ERROR', message: '차트 데이터를 불러오는데 실패했습니다.' },
-      },
+      { success: false, error: { code: 'INTERNAL_ERROR', message: '차트 데이터를 불러오는데 실패했습니다.' } },
       { status: 500 },
     )
   }
