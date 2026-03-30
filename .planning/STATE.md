@@ -1,3 +1,19 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: executing
+stopped_at: Completed 02-hospital-auth-dashboard 02-01-PLAN.md
+last_updated: "2026-03-30T08:06:03.340Z"
+last_activity: 2026-03-30
+progress:
+  total_phases: 5
+  completed_phases: 1
+  total_plans: 1
+  completed_plans: 3
+  percent: 20
+---
+
 # Project State
 
 ## Project Reference
@@ -10,15 +26,16 @@ See: .planning/PROJECT.md (updated 2026-03-30)
 ## Current Position
 
 Phase: 1 of 5 (CMS Critical 수정)
-Plan: 1 of 2 completed in current phase (Plan 1 done)
-Status: In Progress
-Last activity: 2026-03-30 — Plan 1 executed (CMS-01, CMS-02, CMS-03)
+Plan: 2 of 2 completed in current phase (Plan 1 done)
+Status: Ready to execute
+Last activity: 2026-03-30
 
 Progress: [██░░░░░░░░] 20%
 
 ## Performance Metrics
 
 **Velocity:**
+
 - Total plans completed: 2 (Plan 1 + Plan 2 from previous session)
 - Average duration: ~15 minutes/plan
 - Total execution time: ~0.5 hours
@@ -30,10 +47,12 @@ Progress: [██░░░░░░░░] 20%
 | 01-cms-critical | 2 | ~30m | ~15m |
 
 **Recent Trend:**
+
 - Last 5 plans: Plan 1 (15m), Plan 2 (15m)
 - Trend: On schedule
 
 *Updated after each plan completion*
+| Phase 02-hospital-auth-dashboard P1 | 30m | 3 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -49,6 +68,9 @@ Recent decisions affecting current work:
 - [Plan 1]: AdminCredential 모델을 기존 AdminUser와 분리 (독립 email/password 인증용)
 - [Plan 1]: prisma db push 불가 시 직접 SQL CREATE TABLE 사용 후 prisma generate
 - [Plan 1]: Route Handler BigInt(1) fallback 유지, Server Action은 throw 처리
+- [Phase 02-hospital-auth-dashboard]: admin_credentials 테이블에 role/hospital_id 컬럼 추가로 병원 계정 인증 구현 (별도 테이블 생성 없이)
+- [Phase 02-hospital-auth-dashboard]: 대시보드 page.tsx에서 내부 API 호출 없이 Prisma 직접 조회 (same process)
+- [Phase 02-hospital-auth-dashboard]: reviews 테이블은 Prisma 스키마 없어 $queryRaw 사용
 
 ### Pending Todos
 
@@ -62,6 +84,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-30
-Stopped at: Plan 1 complete (CMS-01, CMS-02, CMS-03)
+Last session: 2026-03-30T08:06:03.338Z
+Stopped at: Completed 02-hospital-auth-dashboard 02-01-PLAN.md
 Resume file: None
