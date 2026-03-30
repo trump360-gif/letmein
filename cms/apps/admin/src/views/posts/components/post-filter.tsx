@@ -3,6 +3,7 @@
 import { Input, Button } from '@letmein/ui'
 import { Search, X } from 'lucide-react'
 import { POST_STATUS } from '@/shared/lib/constants'
+import { cn } from '@letmein/utils'
 
 interface PostFilterProps {
   search: string
@@ -81,35 +82,68 @@ export function PostFilter({
         className="h-9 w-32"
       />
 
-      <select
-        value={postType}
-        onChange={(e) => onPostTypeChange(e.target.value)}
-        className="h-9 rounded-md border bg-background px-2 text-sm"
-      >
-        <option value="">포스트 타입</option>
-        <option value="TREND">트렌드</option>
-        <option value="EVERGREEN">에버그린</option>
-      </select>
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-medium text-muted-foreground shrink-0">타입</span>
+        <div className="flex gap-1">
+          {([['', '전체'], ['TREND', '트렌드'], ['EVERGREEN', '에버그린']] as [string, string][]).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => onPostTypeChange(value)}
+              className={cn(
+                'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                postType === value
+                  ? 'bg-foreground text-background border-foreground'
+                  : 'border-border text-muted-foreground hover:border-primary/50',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-      <select
-        value={language}
-        onChange={(e) => onLanguageChange(e.target.value)}
-        className="h-9 rounded-md border bg-background px-2 text-sm"
-      >
-        <option value="">언어</option>
-        <option value="KO">한국어</option>
-        <option value="JA">일본어</option>
-      </select>
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-medium text-muted-foreground shrink-0">언어</span>
+        <div className="flex gap-1">
+          {([['', '전체'], ['KO', '한국어'], ['JA', '일본어']] as [string, string][]).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => onLanguageChange(value)}
+              className={cn(
+                'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                language === value
+                  ? 'bg-foreground text-background border-foreground'
+                  : 'border-border text-muted-foreground hover:border-primary/50',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-      <select
-        value={aiGenerated}
-        onChange={(e) => onAiGeneratedChange(e.target.value)}
-        className="h-9 rounded-md border bg-background px-2 text-sm"
-      >
-        <option value="">AI 생성</option>
-        <option value="true">AI 생성</option>
-        <option value="false">직접 작성</option>
-      </select>
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-medium text-muted-foreground shrink-0">AI 생성</span>
+        <div className="flex gap-1">
+          {([['', '전체'], ['true', 'AI 생성'], ['false', '직접 작성']] as [string, string][]).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => onAiGeneratedChange(value)}
+              className={cn(
+                'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                aiGenerated === value
+                  ? 'bg-foreground text-background border-foreground'
+                  : 'border-border text-muted-foreground hover:border-primary/50',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {hasFilter && (
         <Button variant="ghost" size="sm" onClick={onReset}>

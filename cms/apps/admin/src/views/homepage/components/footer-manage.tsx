@@ -3,6 +3,22 @@
 import { useState } from 'react'
 import { useForm, useFieldArray } from 'react-hook-form'
 import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import {
   Card,
   CardContent,
   Button,
@@ -53,7 +69,7 @@ export function FooterManage() {
       : undefined,
   })
 
-  const { fields: columnFields, append: appendColumn, remove: removeColumn } = useFieldArray({
+  const { fields: columnFields, append: appendColumn, remove: removeColumn, move: moveColumn } = useFieldArray({
     control: form.control,
     name: 'columns',
   })
@@ -62,6 +78,19 @@ export function FooterManage() {
     control: form.control,
     name: 'bottomLinks',
   })
+
+  const columnSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  function handleColumnDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIndex = columnFields.findIndex((f) => f.id === active.id)
+    const newIndex = columnFields.findIndex((f) => f.id === over.id)
+    if (oldIndex !== -1 && newIndex !== -1) moveColumn(oldIndex, newIndex)
+  }
 
   function onSubmit(values: FooterFormValues) {
     const payload: SiteFooterUpdateInput = {
@@ -188,14 +217,21 @@ export function FooterManage() {
             </Button>
           </div>
 
-          {columnFields.map((column, colIndex) => (
-            <ColumnEditor
-              key={column.id}
-              colIndex={colIndex}
-              form={form}
-              onRemove={() => removeColumn(colIndex)}
-            />
-          ))}
+          <DndContext sensors={columnSensors} collisionDetection={closestCenter} onDragEnd={handleColumnDragEnd}>
+            <SortableContext items={columnFields.map((f) => f.id)} strategy={verticalListSortingStrategy}>
+              <div className="space-y-3">
+                {columnFields.map((column, colIndex) => (
+                  <SortableColumnEditor
+                    key={column.id}
+                    id={column.id}
+                    colIndex={colIndex}
+                    form={form}
+                    onRemove={() => removeColumn(colIndex)}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
 
           {columnFields.length === 0 && (
             <p className="py-8 text-center text-sm text-muted-foreground">
@@ -258,24 +294,53 @@ export function FooterManage() {
   )
 }
 
-function ColumnEditor({
+function SortableColumnEditor({
+  id,
   colIndex,
   form,
   onRemove,
 }: {
+  id: string
   colIndex: number
   form: ReturnType<typeof useForm<FooterFormValues>>
   onRemove: () => void
 }) {
-  const { fields, append, remove } = useFieldArray({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+  const columnStyle = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  const { fields, append, remove, move } = useFieldArray({
     control: form.control,
     name: `columns.${colIndex}.items`,
   })
 
+  const itemSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  function handleItemDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIndex = fields.findIndex((f) => f.id === active.id)
+    const newIndex = fields.findIndex((f) => f.id === over.id)
+    if (oldIndex !== -1 && newIndex !== -1) move(oldIndex, newIndex)
+  }
+
   return (
-    <div className="rounded-lg border p-4 space-y-3">
+    <div ref={setNodeRef} style={columnStyle} className="rounded-lg border p-4 space-y-3">
       <div className="flex items-center gap-3">
-        <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
+        <button
+          type="button"
+          className="cursor-grab text-muted-foreground"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
         <Input
           placeholder="컬럼 제목 (예: 시술 메뉴)"
           className="max-w-xs"
@@ -293,38 +358,85 @@ function ColumnEditor({
         </Button>
       </div>
 
-      <div className="ml-7 space-y-2">
-        {fields.map((item, itemIndex) => (
-          <div key={item.id} className="flex items-center gap-2">
-            <Input
-              placeholder="항목명"
-              {...form.register(`columns.${colIndex}.items.${itemIndex}.label`)}
-            />
-            <Input
-              placeholder="URL"
-              {...form.register(`columns.${colIndex}.items.${itemIndex}.href`)}
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => remove(itemIndex)}
-              className="text-destructive hover:text-destructive shrink-0"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ))}
+      <div className="ml-7">
+        <DndContext sensors={itemSensors} collisionDetection={closestCenter} onDragEnd={handleItemDragEnd}>
+          <SortableContext items={fields.map((f) => f.id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-2">
+              {fields.map((item, itemIndex) => (
+                <SortableFooterLinkItem
+                  key={item.id}
+                  id={item.id}
+                  colIndex={colIndex}
+                  itemIndex={itemIndex}
+                  form={form}
+                  onRemove={() => remove(itemIndex)}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
         <Button
           type="button"
           variant="ghost"
           size="sm"
           onClick={() => append({ label: '', href: '' })}
+          className="mt-2"
         >
           <Plus className="mr-1 h-4 w-4" />
           항목 추가
         </Button>
       </div>
+    </div>
+  )
+}
+
+function SortableFooterLinkItem({
+  id,
+  colIndex,
+  itemIndex,
+  form,
+  onRemove,
+}: {
+  id: string
+  colIndex: number
+  itemIndex: number
+  form: ReturnType<typeof useForm<FooterFormValues>>
+  onRemove: () => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-2">
+      <button
+        type="button"
+        className="cursor-grab text-muted-foreground shrink-0"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+      <Input
+        placeholder="항목명"
+        {...form.register(`columns.${colIndex}.items.${itemIndex}.label`)}
+      />
+      <Input
+        placeholder="URL"
+        {...form.register(`columns.${colIndex}.items.${itemIndex}.href`)}
+      />
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={onRemove}
+        className="text-destructive hover:text-destructive shrink-0"
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
     </div>
   )
 }

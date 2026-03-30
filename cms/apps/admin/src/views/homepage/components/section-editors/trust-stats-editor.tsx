@@ -3,13 +3,29 @@
 import { useState } from 'react'
 import { useForm, useFieldArray } from 'react-hook-form'
 import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import {
   Card,
   CardContent,
   Button,
   Input,
   Label,
 } from '@letmein/ui'
-import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, Save, Plus, Trash2, GripVertical } from 'lucide-react'
 import { useUpdateHomepageSection } from '@/features/homepage-manage'
 import { InlineIconPicker } from '@/widgets/icon-picker'
 import { TRUST_STAT_PRESETS } from '@/shared/lib/icon-sets'
@@ -27,6 +43,64 @@ interface StatsFormValues {
     label: string
     value: string
   }[]
+}
+
+function SortableStatItem({
+  id,
+  index,
+  form,
+  onRemove,
+}: {
+  id: string
+  index: number
+  form: ReturnType<typeof useForm<StatsFormValues>>
+  onRemove: () => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className="grid grid-cols-[24px_56px_1fr_1fr_auto] items-end gap-3 rounded-lg border p-3">
+      <button
+        type="button"
+        className="cursor-grab self-center text-muted-foreground"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+      <div className="space-y-1">
+        <Label className="text-xs">아이콘</Label>
+        <InlineIconPicker
+          value={form.watch(`items.${index}.icon`)}
+          bgColor={form.watch(`items.${index}.iconBgColor`)}
+          onSelect={(v) => form.setValue(`items.${index}.icon`, v)}
+          onBgColorChange={(v) => form.setValue(`items.${index}.iconBgColor`, v)}
+        />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">라벨</Label>
+        <Input placeholder="누적 시술 건수" {...form.register(`items.${index}.label`)} />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">값</Label>
+        <Input placeholder="15,000+" {...form.register(`items.${index}.value`)} />
+      </div>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={onRemove}
+        className="text-destructive hover:text-destructive"
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
+  )
 }
 
 export function TrustStatsEditor({ section, onBack }: Props) {
@@ -53,10 +127,23 @@ export function TrustStatsEditor({ section, onBack }: Props) {
     },
   })
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, move } = useFieldArray({
     control: form.control,
     name: 'items',
   })
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIndex = fields.findIndex((f) => f.id === active.id)
+    const newIndex = fields.findIndex((f) => f.id === over.id)
+    if (oldIndex !== -1 && newIndex !== -1) move(oldIndex, newIndex)
+  }
 
   function onSubmit(values: StatsFormValues) {
     const payload: TrustStatsConfig = {
@@ -142,43 +229,26 @@ export function TrustStatsEditor({ section, onBack }: Props) {
               </div>
             </div>
 
-            <div className="space-y-3">
-              {fields.map((field, index) => (
-                <div key={field.id} className="grid grid-cols-[56px_1fr_1fr_auto] items-end gap-3 rounded-lg border p-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs">아이콘</Label>
-                    <InlineIconPicker
-                      value={form.watch(`items.${index}.icon`)}
-                      bgColor={form.watch(`items.${index}.iconBgColor`)}
-                      onSelect={(v) => form.setValue(`items.${index}.icon`, v)}
-                      onBgColorChange={(v) => form.setValue(`items.${index}.iconBgColor`, v)}
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={fields.map((f) => f.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-3">
+                  {fields.map((field, index) => (
+                    <SortableStatItem
+                      key={field.id}
+                      id={field.id}
+                      index={index}
+                      form={form}
+                      onRemove={() => remove(index)}
                     />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">라벨</Label>
-                    <Input placeholder="누적 시술 건수" {...form.register(`items.${index}.label`)} />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">값</Label>
-                    <Input placeholder="15,000+" {...form.register(`items.${index}.value`)} />
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => remove(index)}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  ))}
+                  {fields.length === 0 && (
+                    <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+                      통계 항목이 없습니다. "기본 프리셋 불러오기" 또는 "항목 추가"를 클릭하세요.
+                    </div>
+                  )}
                 </div>
-              ))}
-              {fields.length === 0 && (
-                <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-                  통계 항목이 없습니다. "기본 프리셋 불러오기" 또는 "항목 추가"를 클릭하세요.
-                </div>
-              )}
-            </div>
+              </SortableContext>
+            </DndContext>
           </CardContent>
         </Card>
 

@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { SubscriptionTable } from './components/subscription-table'
 import { cancelSubscription } from '@/app/(dashboard)/premium/actions'
 import type { HospitalSubscription, SubscriptionTier, SubscriptionStatus } from '@letmein/types'
+import { cn } from '@letmein/utils'
 
 interface PremiumViewProps {
   subscriptions: HospitalSubscription[]
@@ -63,28 +64,40 @@ export function PremiumPage({ subscriptions, total, page, limit, hasNext }: Prem
           data-testid="premium-search"
           className="h-9 w-64 rounded-md border px-3 text-sm"
         />
-        <select
-          value={tierFilter ?? ''}
-          onChange={(e) => setTierFilter((e.target.value || undefined) as SubscriptionTier | undefined)}
-          data-testid="tier-filter"
-          className="h-9 rounded-md border px-3 text-sm"
-        >
-          <option value="">전체 티어</option>
-          <option value="basic">Basic</option>
-          <option value="standard">Standard</option>
-          <option value="premium">Premium</option>
-        </select>
-        <select
-          value={statusFilter ?? ''}
-          onChange={(e) => setStatusFilter((e.target.value || undefined) as SubscriptionStatus | undefined)}
-          data-testid="status-filter"
-          className="h-9 rounded-md border px-3 text-sm"
-        >
-          <option value="">전체 상태</option>
-          <option value="active">활성</option>
-          <option value="expired">만료</option>
-          <option value="cancelled">취소</option>
-        </select>
+        <div className="flex gap-2" data-testid="tier-filter">
+          {([['', '전체'], ['basic', 'Basic'], ['standard', 'Standard'], ['premium', 'Premium']] as [string, string][]).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setTierFilter((value || undefined) as SubscriptionTier | undefined)}
+              className={cn(
+                'rounded-full border px-3 py-1.5 text-sm transition-colors',
+                tierFilter === (value || undefined)
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border text-muted-foreground hover:border-primary/50',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2" data-testid="status-filter">
+          {([['', '전체'], ['active', '활성'], ['expired', '만료'], ['cancelled', '취소']] as [string, string][]).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setStatusFilter((value || undefined) as SubscriptionStatus | undefined)}
+              className={cn(
+                'rounded-full border px-3 py-1.5 text-sm transition-colors',
+                statusFilter === (value || undefined)
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border text-muted-foreground hover:border-primary/50',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <button
           onClick={handleReset}
           className="h-9 rounded-md border px-3 text-sm text-muted-foreground hover:bg-accent"

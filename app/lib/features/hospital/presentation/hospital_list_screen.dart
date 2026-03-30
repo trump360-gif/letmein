@@ -181,12 +181,13 @@ class _HospitalListScreenState extends ConsumerState<HospitalListScreen> {
             ),
           ),
 
-          // ── Sort dropdown row ────────────────────
+          // ── Sort chip row ────────────────────────
           Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.pagePadding,
+              vertical: 8,
+            ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   '${searchState.items.length}개 병원',
@@ -195,35 +196,52 @@ class _HospitalListScreenState extends ConsumerState<HospitalListScreen> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
+                const Spacer(),
                 Semantics(
                   label: '정렬 선택',
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<HospitalSort>(
-                      key: const Key('hospital_sort_dropdown'),
-                      value: searchState.sort,
-                      isDense: true,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      icon: Icon(LucideIcons.chevronsUpDown,
-                          size: 14, color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
-                      items: HospitalSort.values
-                          .map(
-                            (s) => DropdownMenuItem(
-                              value: s,
-                              child: Text(s.label),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          ref
+                  child: Row(
+                    key: const Key('hospital_sort_chip_row'),
+                    mainAxisSize: MainAxisSize.min,
+                    children: HospitalSort.values.map((s) {
+                      final isSelected = searchState.sort == s;
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 6),
+                        child: GestureDetector(
+                          key: Key('hospital_sort_chip_${s.value}'),
+                          onTap: () => ref
                               .read(hospitalSearchProvider.notifier)
-                              .updateSort(value);
-                        }
-                      },
-                    ),
+                              .updateSort(s),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? theme.colorScheme.primary
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: isSelected
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.outline,
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              s.label,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: isSelected
+                                    ? Colors.white
+                                    : theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ),
               ],

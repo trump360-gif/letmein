@@ -3,6 +3,22 @@
 import { useState } from 'react'
 import { useForm, useFieldArray } from 'react-hook-form'
 import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import {
   Card,
   CardContent,
   Button,
@@ -10,7 +26,7 @@ import {
   Label,
   Textarea,
 } from '@letmein/ui'
-import { ArrowLeft, Save, Plus, Trash2, UserCircle } from 'lucide-react'
+import { ArrowLeft, Save, Plus, Trash2, UserCircle, GripVertical } from 'lucide-react'
 import { useUpdateHomepageSection } from '@/features/homepage-manage'
 import type { HomepageSection, DoctorSectionConfig } from '@letmein/types'
 
@@ -28,6 +44,79 @@ interface DoctorFormValues {
     description: string
     imageUrl: string
   }[]
+}
+
+function SortableDoctorItem({
+  id,
+  index,
+  form,
+  onRemove,
+}: {
+  id: string
+  index: number
+  form: ReturnType<typeof useForm<DoctorFormValues>>
+  onRemove: () => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className="rounded-lg border p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="cursor-grab text-muted-foreground"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+          <span className="text-sm font-medium">
+            {form.watch(`items.${index}.name`) || `의료진 ${index + 1}`}
+          </span>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onRemove}
+          className="text-destructive hover:text-destructive"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <Label className="text-xs">이름</Label>
+          <Input placeholder="김OO 원장" {...form.register(`items.${index}.name`)} />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">전문분야</Label>
+          <Input placeholder="안면윤곽 전문" {...form.register(`items.${index}.specialty`)} />
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <Label className="text-xs">소개</Label>
+        <Textarea
+          rows={2}
+          placeholder="경력 및 소개..."
+          {...form.register(`items.${index}.description`)}
+        />
+      </div>
+
+      <div className="space-y-1">
+        <Label className="text-xs">프로필 이미지 URL</Label>
+        <Input placeholder="https://..." {...form.register(`items.${index}.imageUrl`)} />
+      </div>
+    </div>
+  )
 }
 
 export function DoctorEditor({ section, onBack }: Props) {
@@ -54,10 +143,23 @@ export function DoctorEditor({ section, onBack }: Props) {
     },
   })
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, move } = useFieldArray({
     control: form.control,
     name: 'items',
   })
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIndex = fields.findIndex((f) => f.id === active.id)
+    const newIndex = fields.findIndex((f) => f.id === over.id)
+    if (oldIndex !== -1 && newIndex !== -1) move(oldIndex, newIndex)
+  }
 
   function onSubmit(values: DoctorFormValues) {
     const payload: DoctorSectionConfig = {
@@ -171,57 +273,26 @@ export function DoctorEditor({ section, onBack }: Props) {
               </div>
             </div>
 
-            <div className="space-y-4">
-              {fields.map((field, index) => (
-                <div key={field.id} className="rounded-lg border p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">
-                      {form.watch(`items.${index}.name`) || `의료진 ${index + 1}`}
-                    </span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => remove(index)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs">이름</Label>
-                      <Input placeholder="김OO 원장" {...form.register(`items.${index}.name`)} />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">전문분야</Label>
-                      <Input placeholder="안면윤곽 전문" {...form.register(`items.${index}.specialty`)} />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-xs">소개</Label>
-                    <Textarea
-                      rows={2}
-                      placeholder="경력 및 소개..."
-                      {...form.register(`items.${index}.description`)}
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={fields.map((f) => f.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-4">
+                  {fields.map((field, index) => (
+                    <SortableDoctorItem
+                      key={field.id}
+                      id={field.id}
+                      index={index}
+                      form={form}
+                      onRemove={() => remove(index)}
                     />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-xs">프로필 이미지 URL</Label>
-                    <Input placeholder="https://..." {...form.register(`items.${index}.imageUrl`)} />
-                  </div>
+                  ))}
+                  {fields.length === 0 && (
+                    <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+                      등록된 의료진이 없습니다. &quot;샘플 데이터 불러오기&quot; 또는 &quot;의료진 추가&quot;를 클릭하세요.
+                    </div>
+                  )}
                 </div>
-              ))}
-
-              {fields.length === 0 && (
-                <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-                  등록된 의료진이 없습니다. &quot;샘플 데이터 불러오기&quot; 또는 &quot;의료진 추가&quot;를 클릭하세요.
-                </div>
-              )}
-            </div>
+              </SortableContext>
+            </DndContext>
           </CardContent>
         </Card>
 

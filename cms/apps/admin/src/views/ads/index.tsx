@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import { AdCreativeTable } from './components/ad-creative-table'
 import type { AdCreative, AdReviewStatus } from '@letmein/types'
+import { cn } from '@letmein/utils'
 
 interface AdsViewProps {
   creatives: AdCreative[]
@@ -44,19 +45,23 @@ export function AdsPage({ creatives, total, page, limit, hasNext }: AdsViewProps
           data-testid="ads-search"
           className="h-9 w-64 rounded-md border px-3 text-sm"
         />
-        <select
-          value={reviewStatusFilter ?? ''}
-          onChange={(e) =>
-            setReviewStatusFilter((e.target.value || undefined) as AdReviewStatus | undefined)
-          }
-          data-testid="review-status-filter"
-          className="h-9 rounded-md border px-3 text-sm"
-        >
-          <option value="">전체 상태</option>
-          <option value="pending">심사 대기</option>
-          <option value="approved">승인됨</option>
-          <option value="rejected">거부됨</option>
-        </select>
+        <div className="flex gap-2" data-testid="review-status-filter">
+          {([['', '전체'], ['pending', '심사 대기'], ['approved', '승인됨'], ['rejected', '거부됨']] as [string, string][]).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setReviewStatusFilter((value || undefined) as AdReviewStatus | undefined)}
+              className={cn(
+                'rounded-full border px-3 py-1.5 text-sm transition-colors',
+                reviewStatusFilter === (value || undefined)
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border text-muted-foreground hover:border-primary/50',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <button
           onClick={handleReset}
           className="h-9 rounded-md border px-3 text-sm text-muted-foreground hover:bg-accent"

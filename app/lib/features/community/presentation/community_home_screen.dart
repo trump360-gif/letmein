@@ -93,34 +93,7 @@ class _CommunityHomeScreenState extends ConsumerState<CommunityHomeScreen>
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
         centerTitle: false,
-        actions: [
-          // Sort menu applies to the currently active tab
-          ListenableBuilder(
-            listenable: _tabController,
-            builder: (context, _) {
-              final state = _tabController.index == 0
-                  ? beforeAfterState
-                  : freeState;
-              final notifier = _tabController.index == 0
-                  ? ref.read(postListProvider.notifier)
-                  : ref.read(freePostListProvider.notifier);
-              return PopupMenuButton<String>(
-                icon: const Icon(LucideIcons.arrowUpDown),
-                tooltip: '정렬',
-                onSelected: (sort) {
-                  notifier.applyFilter(
-                      state.filter.copyWith(sort: sort));
-                },
-                itemBuilder: (ctx) => const [
-                  PopupMenuItem(value: 'latest', child: Text('최신순')),
-                  PopupMenuItem(value: 'likes', child: Text('좋아요순')),
-                  PopupMenuItem(
-                      value: 'comments', child: Text('댓글순')),
-                ],
-              );
-            },
-          ),
-        ],
+        actions: const [],
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: colorScheme.primary,
@@ -158,6 +131,11 @@ class _CommunityHomeScreenState extends ConsumerState<CommunityHomeScreen>
                     beforeAfterState.filter.copyWith(categoryId: id),
                   );
             },
+            onSortChanged: (sort) {
+              ref.read(postListProvider.notifier).applyFilter(
+                    beforeAfterState.filter.copyWith(sort: sort),
+                  );
+            },
           ),
 
           // ── Tab 1: 자유게시판 ────────────────────────
@@ -169,6 +147,11 @@ class _CommunityHomeScreenState extends ConsumerState<CommunityHomeScreen>
             onRefresh: () async =>
                 ref.read(freePostListProvider.notifier).refresh(),
             onCategorySelected: (_) {},
+            onSortChanged: (sort) {
+              ref.read(freePostListProvider.notifier).applyFilter(
+                    freeState.filter.copyWith(sort: sort),
+                  );
+            },
           ),
           // Note: ads are injected inside _TabContent via _feedAdsProvider
 
@@ -221,6 +204,7 @@ class _TabContent extends ConsumerWidget {
     required this.showCategories,
     required this.onRefresh,
     required this.onCategorySelected,
+    required this.onSortChanged,
   });
 
   final PostListState state;
@@ -229,6 +213,7 @@ class _TabContent extends ConsumerWidget {
   final bool showCategories;
   final Future<void> Function() onRefresh;
   final void Function(int? id) onCategorySelected;
+  final void Function(String sort) onSortChanged;
 
   // Insert one ad every 5 posts. Returns the list of feed items
   // (posts + ads) merged together. Ads are never consecutive.
@@ -270,6 +255,12 @@ class _TabContent extends ConsumerWidget {
             loading: () => const SizedBox.shrink(),
             error: (e, s) => const SizedBox.shrink(),
           ),
+
+        // ── Sort chip bar ─────────────────────────
+        _SortChipBar(
+          currentSort: state.filter.sort,
+          onSortChanged: onSortChanged,
+        ),
 
         // ── Feed ─────────────────────────────────
         Expanded(
@@ -360,6 +351,81 @@ class _TabContent extends ConsumerWidget {
                 context.push('${AppRoutes.community}/${post.id}'),
           );
         },
+      ),
+    );
+  }
+}
+
+// ──────────────────────────────────────────────
+// _SortChipBar
+// ──────────────────────────────────────────────
+
+class _SortChipBar extends StatelessWidget {
+  const _SortChipBar({
+    required this.currentSort,
+    required this.onSortChanged,
+  });
+
+  final String? currentSort;
+  final void Function(String sort) onSortChanged;
+
+  static const _options = [
+    (value: 'latest', label: '최신순'),
+    (value: 'likes', label: '좋아요순'),
+    (value: 'comments', label: '댓글순'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final activeSort = currentSort ?? 'latest';
+
+    return SizedBox(
+      height: 44,
+      child: ListView(
+        key: const Key('community_sort_chip_row'),
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.pagePadding,
+          vertical: 6,
+        ),
+        children: _options.map((opt) {
+          final isSelected = activeSort == opt.value;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: GestureDetector(
+              key: Key('community_sort_chip_${opt.value}'),
+              onTap: () => onSortChanged(opt.value),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? colorScheme.primary
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected
+                        ? colorScheme.primary
+                        : colorScheme.outline,
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  opt.label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: isSelected
+                        ? Colors.white
+                        : colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }

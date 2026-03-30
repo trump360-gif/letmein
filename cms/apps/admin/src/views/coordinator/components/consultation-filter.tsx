@@ -1,6 +1,7 @@
 'use client'
 
 import type { ConsultationStatus } from '@letmein/types'
+import { cn } from '@letmein/utils'
 
 const CONSULTATION_STATUSES: Record<string, string> = {
   active: '대기중',
@@ -27,16 +28,35 @@ export function ConsultationFilter({ search, onSearchChange, status, onStatusCha
         onChange={(e) => onSearchChange(e.target.value)}
         className="h-9 w-64 rounded-md border px-3 text-sm"
       />
-      <select
-        value={status ?? ''}
-        onChange={(e) => onStatusChange((e.target.value || undefined) as ConsultationStatus | undefined)}
-        className="h-9 rounded-md border px-3 text-sm"
-      >
-        <option value="">전체 상태</option>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => onStatusChange(undefined)}
+          className={cn(
+            'rounded-full border px-3 py-1.5 text-sm transition-colors',
+            status === undefined
+              ? 'border-primary bg-primary text-primary-foreground'
+              : 'border-border text-muted-foreground hover:border-primary/50',
+          )}
+        >
+          전체
+        </button>
         {Object.entries(CONSULTATION_STATUSES).map(([k, v]) => (
-          <option key={k} value={k}>{v}</option>
+          <button
+            key={k}
+            type="button"
+            onClick={() => onStatusChange(k as ConsultationStatus)}
+            className={cn(
+              'rounded-full border px-3 py-1.5 text-sm transition-colors',
+              status === k
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'border-border text-muted-foreground hover:border-primary/50',
+            )}
+          >
+            {v}
+          </button>
         ))}
-      </select>
+      </div>
       <button
         onClick={onReset}
         className="h-9 rounded-md border px-3 text-sm text-muted-foreground hover:bg-accent"
