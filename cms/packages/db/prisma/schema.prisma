@@ -127,6 +127,8 @@ model Hospital {
   introVideoUrl              String?                      @map("intro_video_url") @db.VarChar(500)
   detailedDescription        String?                      @map("detailed_description")
   caseCount                  Int?                         @default(0) @map("case_count")
+  avgRating                  Decimal?                     @default(0) @map("avg_rating") @db.Decimal(2, 1)
+  reviewCount                Int?                         @default(0) @map("review_count")
   adCampaigns                AdCampaign[]
   adCreatives                AdCreative[]
   ad_credit_transactions     ad_credit_transactions[]
