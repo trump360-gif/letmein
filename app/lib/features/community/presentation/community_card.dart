@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../data/community_models.dart';
 import '../../../shared/widgets/cached_image.dart';
+import '../../../core/theme/app_theme.dart';
 
 // ──────────────────────────────────────────────
 // CommunityCard  (compact feed card)
@@ -35,8 +36,12 @@ class CommunityCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: colorScheme.outline,
+              width: 1,
+            ),
           ),
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(AppSpacing.cardPadding),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -77,7 +82,7 @@ class CommunityCard extends StatelessWidget {
                         post.title!,
                         key: Key('community_card_title_${post.id}'),
                         style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface,
                         ),
                         maxLines: 1,
@@ -222,7 +227,7 @@ class _CategoryChip extends StatelessWidget {
         style: TextStyle(
           fontSize: 11,
           color: color,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
           fontFamily: 'Pretendard',
         ),
       ),

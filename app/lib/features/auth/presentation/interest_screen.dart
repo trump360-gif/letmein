@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../features/hospital/presentation/hospital_provider.dart';
 import '../data/auth_repository.dart';
+import '../../../core/theme/app_theme.dart';
 
 // ──────────────────────────────────────────────
 // InterestScreen
@@ -83,11 +84,11 @@ class _InterestScreenState extends ConsumerState<InterestScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.pagePadding),
 
             // ── Heading ───────────────────────────────
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: AppSpacing.pageH,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -116,7 +117,7 @@ class _InterestScreenState extends ConsumerState<InterestScreen> {
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpacing.sectionGap),
 
             // ── Category chips ────────────────────────
             Expanded(
@@ -152,7 +153,7 @@ class _InterestScreenState extends ConsumerState<InterestScreen> {
                   ),
                 ),
                 data: (categories) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: AppSpacing.pageH,
                   child: Wrap(
                     key: const Key('interest_chips_wrap'),
                     spacing: 10,
@@ -184,7 +185,7 @@ class _InterestScreenState extends ConsumerState<InterestScreen> {
 
             // ── Selection count ───────────────────────
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding, vertical: 8),
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
                 child: _selected.isEmpty
@@ -204,7 +205,7 @@ class _InterestScreenState extends ConsumerState<InterestScreen> {
 
             // ── CTA button ────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 0, AppSpacing.pagePadding, AppSpacing.pagePadding),
               child: SizedBox(
                 width: double.infinity,
                 height: 54,

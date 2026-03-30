@@ -91,7 +91,7 @@ body{background:#0D0D0D;color:#fff;font-family:-apple-system,BlinkMacSystemFont,
 	consultRepo := repository.NewConsultationRepository(db)
 	coordinatorRepo := repository.NewCoordinatorRepository(db)
 	chatRepoForCoord := repository.NewChatRepository(db)
-	consultSvc := service.NewConsultationService(consultRepo, hospitalRepo)
+	consultSvc := service.NewConsultationService(consultRepo, hospitalRepo, chatRepoForCoord)
 	coordinatorSvc := service.NewCoordinatorService(coordinatorRepo, consultRepo, chatRepoForCoord)
 
 	adminH := NewAdminHandlerWithCoordinator(adminRepo, coordinatorSvc)
@@ -113,6 +113,7 @@ body{background:#0D0D0D;color:#fff;font-family:-apple-system,BlinkMacSystemFont,
 
 			// Protected endpoints
 			authRequired := middleware.AuthRequired(jwtManager)
+			auth.GET("/me", authRequired, authHandler.GetMe)
 			auth.POST("/logout", authRequired, authHandler.Logout)
 			auth.POST("/nickname", authRequired, authHandler.UpdateNickname)
 			auth.DELETE("/account", authRequired, authHandler.DeleteAccount)

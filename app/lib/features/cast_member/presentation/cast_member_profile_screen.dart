@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/cached_image.dart';
 import '../data/cast_member_models.dart';
 import '../data/cast_member_repository.dart';
@@ -133,7 +134,7 @@ class _CastMemberProfileBodyState
           SliverToBoxAdapter(
             child: Container(
               color: colorScheme.surface,
-              padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
+              padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 60, AppSpacing.pagePadding, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -296,7 +297,7 @@ class _CastMemberProfileBodyState
           SliverToBoxAdapter(
             child: Padding(
               padding:
-                  const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                  const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 16, AppSpacing.pagePadding, 8),
               child: Text(
                 '스토리',
                 style: theme.textTheme.titleSmall?.copyWith(
@@ -334,7 +335,7 @@ class _CastMemberProfileBodyState
           else
             SliverPadding(
               padding:
-                  const EdgeInsets.fromLTRB(16, 0, 16, 96),
+                  const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 0, AppSpacing.pagePadding, 96),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {

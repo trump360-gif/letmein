@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/cached_image.dart';
 import '../data/consultation_models.dart';
 import 'consultation_provider.dart';
@@ -88,7 +89,7 @@ class _ConsultationDetailContent extends ConsumerWidget {
         },
         child: ListView(
           key: const Key('consultation_detail_scroll'),
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 16, AppSpacing.pagePadding, 32),
           children: [
             // ── 4-step process bar ───────────────────
             _ProcessBar(
@@ -99,12 +100,12 @@ class _ConsultationDetailContent extends ConsumerWidget {
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.sectionGap),
 
             // ── Request summary card ─────────────────
             _RequestSummaryCard(request: request),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.sectionGap),
 
             // ── Matches section ──────────────────────
             _MatchesSection(

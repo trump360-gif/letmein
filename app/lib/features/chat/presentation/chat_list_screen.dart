@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/theme/app_theme.dart';
 import '../data/chat_models.dart';
 import 'chat_provider.dart';
 
@@ -37,7 +38,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
       appBar: AppBar(
         title: const Text(
           '채팅',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.w500),
         ),
         centerTitle: false,
       ),
@@ -107,10 +108,14 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
       onRefresh: () => ref.read(chatRoomsProvider.notifier).load(),
       child: ListView.separated(
         key: const Key('chat_list_view'),
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
         itemCount: state.rooms.length,
-        separatorBuilder: (context, index) =>
-            const Divider(height: 1, indent: 72),
+        separatorBuilder: (context, index) => Divider(
+          height: 1,
+          thickness: 1,
+          indent: AppSpacing.pagePadding + 48 + AppSpacing.itemGap,
+          color: Theme.of(context).dividerColor,
+        ),
         itemBuilder: (context, index) {
           final room = state.rooms[index];
           return _ChatRoomTile(
@@ -145,25 +150,38 @@ class _ChatRoomTile extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.pagePadding,
+          vertical: 15,
+        ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Avatar
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: theme.colorScheme.primaryContainer,
-              child: Text(
-                room.otherName.isNotEmpty
-                    ? room.otherName[0].toUpperCase()
-                    : '?',
-                style: TextStyle(
-                  color: theme.colorScheme.onPrimaryContainer,
-                  fontWeight: FontWeight.bold,
+            // Avatar with clean thin border
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: theme.dividerColor,
+                  width: 1,
+                ),
+              ),
+              child: CircleAvatar(
+                radius: 24,
+                backgroundColor: theme.colorScheme.primaryContainer,
+                child: Text(
+                  room.otherName.isNotEmpty
+                      ? room.otherName[0].toUpperCase()
+                      : '?',
+                  style: TextStyle(
+                    color: theme.colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 15,
+                  ),
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.itemGap),
 
             // Name + last message
             Expanded(
@@ -176,7 +194,7 @@ class _ChatRoomTile extends StatelessWidget {
                         child: Text(
                           room.otherName,
                           style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w500,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -188,35 +206,41 @@ class _ChatRoomTile extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest,
+                            border: Border.all(
+                              color: theme.dividerColor,
+                              width: 1,
+                            ),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             '종료',
                             style: TextStyle(
                               fontSize: 10,
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                              fontWeight: FontWeight.w400,
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                             ),
                           ),
                         ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 6),
                       Text(
                         _formatTime(room.lastMessageAt),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                        style: TextStyle(
                           fontSize: 11,
+                          fontWeight: FontWeight.w400,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 5),
                   Row(
                     children: [
                       Expanded(
                         child: Text(
                           room.lastMessage ?? '메시지가 없습니다.',
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                            fontWeight: FontWeight.w400,
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -227,7 +251,7 @@ class _ChatRoomTile extends StatelessWidget {
                           key: Key('chat_unread_badge_${room.id}'),
                           margin: const EdgeInsets.only(left: 8),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                              horizontal: 7, vertical: 2),
                           decoration: BoxDecoration(
                             color: theme.colorScheme.primary,
                             borderRadius: BorderRadius.circular(10),
@@ -239,7 +263,7 @@ class _ChatRoomTile extends StatelessWidget {
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 11,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ),

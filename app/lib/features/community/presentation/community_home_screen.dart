@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../features/hospital/presentation/hospital_provider.dart';
 import 'community_provider.dart';
 import 'community_card.dart';
@@ -89,7 +90,7 @@ class _CommunityHomeScreenState extends ConsumerState<CommunityHomeScreen>
       appBar: AppBar(
         title: const Text(
           '커뮤니티',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.w600),
         ),
         centerTitle: false,
         actions: [
@@ -258,18 +259,16 @@ class _TabContent extends ConsumerWidget {
       children: [
         // ── Category filter chips (비포&애프터 only) ──
         if (showCategories)
-          Container(
-            child: categoriesAsync.when(
-              data: (categories) => _CategoryFilterBar(
-                categories: (categories as List)
-                    .map((c) => (id: c.id as int, name: c.name as String))
-                    .toList(),
-                selectedId: state.filter.categoryId,
-                onSelected: onCategorySelected,
-              ),
-              loading: () => const SizedBox.shrink(),
-              error: (e, s) => const SizedBox.shrink(),
+          categoriesAsync.when(
+            data: (categories) => _CategoryFilterBar(
+              categories: (categories as List)
+                  .map((c) => (id: c.id as int, name: c.name as String))
+                  .toList(),
+              selectedId: state.filter.categoryId,
+              onSelected: onCategorySelected,
             ),
+            loading: () => const SizedBox.shrink(),
+            error: (e, s) => const SizedBox.shrink(),
           ),
 
         // ── Feed ─────────────────────────────────
@@ -328,9 +327,9 @@ class _TabContent extends ConsumerWidget {
       child: ListView.separated(
         key: Key('community_feed_list_${state.filter.boardType}'),
         controller: scrollController,
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+        padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, AppSpacing.sectionGap, AppSpacing.pagePadding, 96),
         itemCount: feedItems.length + (state.isLoadingMore ? 1 : 0),
-        separatorBuilder: (context, index) => const SizedBox(height: 10),
+        separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.itemGap),
         itemBuilder: (context, index) {
           if (index == feedItems.length) {
             return const Padding(
@@ -389,7 +388,7 @@ class _CategoryFilterBar extends StatelessWidget {
       height: 52,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding, vertical: 8),
         children: [
           Padding(
             padding: const EdgeInsets.only(right: 8),
@@ -513,6 +512,10 @@ class _AdFeedCardState extends State<_AdFeedCard> {
           decoration: BoxDecoration(
             color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: theme.colorScheme.outline,
+              width: 1,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

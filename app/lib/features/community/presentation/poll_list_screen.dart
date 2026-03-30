@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/theme/app_theme.dart';
 import '../data/poll_models.dart';
 import 'poll_provider.dart';
 
@@ -83,7 +84,7 @@ class _PollListScreenState extends ConsumerState<PollListScreen> {
         child: ListView.separated(
           controller: _scrollController,
           padding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding, vertical: 12),
           itemCount:
               state.items.length + (state.isLoadingMore ? 1 : 0),
           separatorBuilder: (context, index) => const SizedBox(height: 10),

@@ -12,6 +12,7 @@ import '../../cast_member/presentation/cast_member_provider.dart';
 import '../../cast_member/data/cast_member_models.dart';
 import '../../../shared/widgets/youtube_hero.dart';
 import '../../../shared/widgets/cached_image.dart';
+import '../../../core/theme/app_theme.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -68,18 +69,36 @@ class HomeScreen extends ConsumerWidget {
         },
         child: ListView(
           key: const Key('home_scroll_view'),
-          padding: const EdgeInsets.only(bottom: 24),
+          padding: const EdgeInsets.only(bottom: AppSpacing.xl),
           children: const [
-            SizedBox(height: 8),
-            _StoryBar(),
-            SizedBox(height: 8),
+            // ── 1. 블록 메뉴 (다이사 스타일 최상단) ──
+            SizedBox(height: AppSpacing.md),
+            _ServiceCategoryCards(),
+            SizedBox(height: AppSpacing.sm),
+            _QuickServiceBar(),
+
+            // ── 2. 신뢰 지표 ──
+            SizedBox(height: AppSpacing.lg),
+            _TrustBanner(),
+
+            // ── 3. 유튜브 콘텐츠 + 출연자 ──
+            SizedBox(height: AppSpacing.sectionGap),
             _HeroSection(),
-            SizedBox(height: 16),
-            _QuickMenuSection(),
-            SizedBox(height: 16),
+            SizedBox(height: AppSpacing.md),
+            _StoryBar(),
+
+            // ── 4. 추천 병원 ──
+            SizedBox(height: AppSpacing.sectionGap),
             _RecommendedHospitalsSection(),
-            SizedBox(height: 16),
+
+            // ── 5. 커뮤니티 맛보기 ──
+            SizedBox(height: AppSpacing.sectionGap),
             _BeforeAfterSection(),
+
+            // ── 6. 상담 CTA ──
+            SizedBox(height: AppSpacing.sectionGap),
+            _ConsultationCTA(),
+            SizedBox(height: AppSpacing.md),
           ],
         ),
       ),
@@ -104,7 +123,7 @@ class _StoryBar extends ConsumerWidget {
         child: ListView.separated(
           key: const Key('home_story_bar_loading'),
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
           itemCount: 5,
           separatorBuilder: (_, i) => const SizedBox(width: 14),
           itemBuilder: (_, i) => const _StoryBarShimmer(),
@@ -121,7 +140,7 @@ class _StoryBar extends ConsumerWidget {
       child: ListView.separated(
         key: const Key('home_story_bar'),
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
         itemCount: listState.items.length,
         separatorBuilder: (_, i) => const SizedBox(width: 14),
         itemBuilder: (context, index) {
@@ -284,7 +303,7 @@ class _RecommendedHospitalsSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionHeaderWithAdLabel(
+        _SectionHeader(
           title: '이런 병원 어때요?',
           actionLabel: '더보기',
           onAction: () => context.go('/hospital'),
@@ -295,7 +314,7 @@ class _RecommendedHospitalsSection extends ConsumerWidget {
             child: ListView.separated(
               key: const Key('home_recommended_hospital_loading'),
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
               itemCount: 3,
               separatorBuilder: (_, i) => const SizedBox(width: 10),
               itemBuilder: (_, i) => Container(
@@ -316,7 +335,7 @@ class _RecommendedHospitalsSection extends ConsumerWidget {
               child: ListView.separated(
                 key: const Key('home_recommended_hospital_scroll'),
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
                 itemCount: hospitals.length,
                 separatorBuilder: (_, i) => const SizedBox(width: 10),
                 itemBuilder: (context, index) {
@@ -340,23 +359,6 @@ class _RecommendedHospitalsSection extends ConsumerWidget {
 }
 
 // ──────────────────────────────────────────────
-// Pictogram icon overrides for known category names
-// ──────────────────────────────────────────────
-
-const _kCategoryIcons = <String, IconData>{
-  '눈': LucideIcons.eye,
-  '코': LucideIcons.diamond,
-  '윤곽': LucideIcons.scan,
-  '가슴': LucideIcons.stethoscope,
-  '지방흡입': LucideIcons.activity,
-  '피부': LucideIcons.sparkles,
-  '기타': LucideIcons.star,
-};
-
-IconData _iconForCategory(String name) =>
-    _kCategoryIcons[name] ?? _kCategoryIcons['기타']!;
-
-// ──────────────────────────────────────────────
 // _SectionHeader — shared section title row
 // ──────────────────────────────────────────────
 
@@ -370,13 +372,13 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 16, 8),
+      padding: EdgeInsets.fromLTRB(AppSpacing.pagePadding, 0, AppSpacing.md, AppSpacing.sectionHeaderBottom),
       child: Row(
         children: [
           Text(
             title,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                   fontSize: 16,
                 ),
           ),
@@ -399,156 +401,445 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
+
 // ──────────────────────────────────────────────
-// _SectionHeaderWithAdLabel — 광고 라벨 포함 섹션 헤더
+// _ServiceCategoryCards — 다이사 스타일 시술 카테고리 3열 카드
 // ──────────────────────────────────────────────
 
-class _SectionHeaderWithAdLabel extends StatelessWidget {
-  const _SectionHeaderWithAdLabel({
-    required this.title,
-    this.actionLabel,
-    this.onAction,
-  });
-
-  final String title;
-  final String? actionLabel;
-  final VoidCallback? onAction;
+class _ServiceCategoryCards extends StatelessWidget {
+  const _ServiceCategoryCards();
 
   @override
   Widget build(BuildContext context) {
+    const gap = AppSpacing.sm;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 16, 8),
-      child: Row(
-        children: [
-          Text(
-            title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
-                ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            key: const Key('home_recommended_hospitals_ad_label'),
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-            decoration: BoxDecoration(
-              color: const Color(0xFFC62828),
-              borderRadius: BorderRadius.circular(4),
+      key: const Key('home_service_categories'),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ── 왼쪽 큰 카드 (눈 성형) ──
+            Expanded(
+              flex: 5,
+              child: _BigCategoryCard(
+                label: '눈 성형',
+                desc: '쌍꺼풀·눈매교정\n앞트임·뒤트임',
+                icon: LucideIcons.eye,
+                onTap: () => context.go('/hospital?category=눈'),
+              ),
             ),
-            child: const Text(
-              '광고',
+            const SizedBox(width: gap),
+            // ── 오른쪽 작은 카드 2개 세로 ──
+            Expanded(
+              flex: 4,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: _SmallCategoryCard(
+                      label: '코 성형',
+                      desc: '코끝·콧대·재수술',
+                      icon: LucideIcons.diamond,
+                      onTap: () => context.go('/hospital?category=코'),
+                    ),
+                  ),
+                  const SizedBox(height: gap),
+                  Expanded(
+                    child: _SmallCategoryCard(
+                      label: '윤곽·양악',
+                      desc: '사각턱·광대·턱끝',
+                      icon: LucideIcons.scan,
+                      onTap: () => context.go('/hospital?category=윤곽'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BigCategoryCard extends StatelessWidget {
+  const _BigCategoryCard({
+    required this.label,
+    required this.desc,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String label;
+  final String desc;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colorScheme.outline, width: 1),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
               style: TextStyle(
-                fontSize: 10,
-                color: Colors.white,
-                fontFamily: 'Pretendard',
+                fontSize: 20,
                 fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+                fontFamily: 'Pretendard',
               ),
             ),
-          ),
-          const Spacer(),
-          if (actionLabel != null && onAction != null)
-            GestureDetector(
-              onTap: onAction,
-              child: Text(
-                actionLabel!,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-                  fontFamily: 'Pretendard',
-                ),
+            const SizedBox(height: 6),
+            Text(
+              desc,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+                color: colorScheme.onSurface.withValues(alpha: 0.45),
+                fontFamily: 'Pretendard',
+                height: 1.5,
               ),
             ),
-        ],
+            const Spacer(),
+            Align(
+              alignment: Alignment.bottomRight,
+              child: Icon(
+                icon,
+                size: 48,
+                color: colorScheme.primary.withValues(alpha: 0.25),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SmallCategoryCard extends StatelessWidget {
+  const _SmallCategoryCard({
+    required this.label,
+    required this.desc,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String label;
+  final String desc;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colorScheme.outline, width: 1),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+                fontFamily: 'Pretendard',
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              desc,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w400,
+                color: colorScheme.onSurface.withValues(alpha: 0.45),
+                fontFamily: 'Pretendard',
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
 // ──────────────────────────────────────────────
-// _CategorySection — 시술 카테고리
+// _QuickServiceBar — 부가서비스 가로 스크롤 바로가기
 // ──────────────────────────────────────────────
 
-class _CategorySection extends ConsumerWidget {
-  const _CategorySection();
+class _QuickServiceBar extends StatelessWidget {
+  const _QuickServiceBar();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final categoryAsync = ref.watch(categoryProvider);
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SectionHeader(title: '시술 카테고리'),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: categoryAsync.when(
-            data: (categories) {
-              if (categories.isEmpty) {
-                return const Text('카테고리가 없습니다.');
-              }
-              // 3-3-1 그리드 레이아웃
-              final rows = <List<dynamic>>[];
-              for (var i = 0; i < categories.length; i += 3) {
-                final end = (i + 3 > categories.length) ? categories.length : i + 3;
-                rows.add(categories.sublist(i, end));
-              }
-              return Column(
-                key: const Key('home_category_grid'),
-                children: rows.map((row) {
-                  final isLastRow = row.length < 3;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        ...row.map((cat) {
-                          if (isLastRow && row.length == 1) {
-                            // 마지막 행 1개 → 전체 너비
-                            return Expanded(
-                              child: _CategoryPill(
-                                key: Key('home_category_chip_${cat.id}'),
-                                icon: _iconForCategory(cat.name),
-                                label: cat.name,
-                                onTap: () => context.go('/hospital'),
-                                activeColor: colorScheme.primary,
-                              ),
-                            );
-                          }
-                          return Expanded(
-                            child: Padding(
-                              padding: EdgeInsets.only(
-                                right: row.indexOf(cat) < row.length - 1 ? 8 : 0,
-                              ),
-                              child: _CategoryPill(
-                                key: Key('home_category_chip_${cat.id}'),
-                                icon: _iconForCategory(cat.name),
-                                label: cat.name,
-                                onTap: () => context.go('/hospital'),
-                                activeColor: colorScheme.primary,
-                              ),
-                            ),
-                          );
-                        }),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              );
-            },
-            loading: () => Column(
-              children: List.generate(3, (_) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: List.generate(3, (_) => const Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(right: 8),
-                      child: _ShimmerChip(),
-                    ),
-                  )),
-                ),
-              )),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
+      child: Column(
+        key: const Key('home_quick_service_bar'),
+        children: [
+          // ── 3열 카드 (다이사: 입주청소/인터넷/에어컨) ──
+          Row(
+            children: [
+              _QuickCard(
+                label: '상담요청',
+                icon: LucideIcons.clipboardList,
+                badge: '무료',
+                onTap: () => context.go('/consultation/create'),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              _QuickCard(
+                label: '병원찾기',
+                icon: LucideIcons.stethoscope,
+                onTap: () => context.go('/hospital'),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              _QuickCard(
+                label: '커뮤니티',
+                icon: LucideIcons.messagesSquare,
+                onTap: () => context.go('/community'),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          // ── 2열 탭 (다이사: 대출/렌탈) ──
+          Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: colorScheme.outline, width: 1),
             ),
-            error: (err, stack) => const Text('카테고리를 불러오지 못했습니다.'),
+            child: IntrinsicHeight(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => context.go('/chat'),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        child: Text(
+                          '채팅',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: colorScheme.onSurface,
+                            fontFamily: 'Pretendard',
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  VerticalDivider(
+                    width: 1,
+                    thickness: 1,
+                    color: colorScheme.outline,
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => context.go('/community'),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        child: Text(
+                          '이벤트',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: colorScheme.onSurface,
+                            fontFamily: 'Pretendard',
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickCard extends StatelessWidget {
+  const _QuickCard({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    this.badge,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  final String? badge;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: colorScheme.outline, width: 1),
+          ),
+          child: Column(
+            children: [
+              if (badge != null)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    badge!,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.primary,
+                      fontFamily: 'Pretendard',
+                    ),
+                  ),
+                ),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                  fontFamily: 'Pretendard',
+                ),
+              ),
+              const SizedBox(height: 6),
+              Icon(
+                icon,
+                size: 24,
+                color: colorScheme.onSurface.withValues(alpha: 0.35),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ──────────────────────────────────────────────
+// _TrustBanner — 신뢰 지표 배너 (3개 통계)
+// ──────────────────────────────────────────────
+
+class _TrustBanner extends StatelessWidget {
+  const _TrustBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
+      child: Container(
+        key: const Key('home_trust_banner'),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
+        ),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _TrustStat(
+              number: '1,200+건',
+              label: '상담 완료',
+              goldColor: colorScheme.secondary,
+            ),
+            _TrustDivider(),
+            _TrustStat(
+              number: '30+곳',
+              label: '파트너 병원',
+              goldColor: colorScheme.secondary,
+            ),
+            _TrustDivider(),
+            _TrustStat(
+              number: '4.8',
+              label: '평균 만족도',
+              goldColor: colorScheme.secondary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TrustStat extends StatelessWidget {
+  const _TrustStat({
+    required this.number,
+    required this.label,
+    required this.goldColor,
+  });
+
+  final String number;
+  final String label;
+  final Color goldColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          number,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: goldColor,
+            fontFamily: 'Pretendard',
+            letterSpacing: -0.3,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w400,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+            fontFamily: 'Pretendard',
           ),
         ),
       ],
@@ -556,50 +847,89 @@ class _CategorySection extends ConsumerWidget {
   }
 }
 
-class _CategoryPill extends StatelessWidget {
-  const _CategoryPill({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    required this.activeColor,
-  });
+class _TrustDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 28,
+      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
+    );
+  }
+}
 
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final Color activeColor;
+// ──────────────────────────────────────────────
+// _ConsultationCTA — 무료 상담 신청 배너
+// ──────────────────────────────────────────────
+
+class _ConsultationCTA extends StatelessWidget {
+  const _ConsultationCTA();
 
   @override
   Widget build(BuildContext context) {
-    final bg = activeColor.withValues(alpha: 0.09);
-    return Semantics(
-      button: true,
-      label: label,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          height: 44,
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(12),
+    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
+      child: Container(
+        key: const Key('home_consultation_cta'),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border(
+            left: BorderSide(color: colorScheme.primary, width: 4),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 16, color: activeColor),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontFamily: 'Pretendard',
+        ),
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              '무료 상담 받아보세요',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                fontSize: 17,
+                letterSpacing: -0.3,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              '전문 코디네이터가 맞춤 병원을 추천해드려요',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.55),
+                fontSize: 13,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Semantics(
+              button: true,
+              label: '상담 신청하기',
+              child: ElevatedButton(
+                key: const Key('home_consultation_cta_button'),
+                onPressed: () => context.go('/consultation/create'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  '상담 신청하기',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Pretendard',
+                    letterSpacing: -0.2,
+                  ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -630,7 +960,7 @@ class _BeforeAfterSection extends ConsumerWidget {
           const _PostsLoadingPlaceholder()
         else if (postState.errorMessage != null)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
             child: Text(
               postState.errorMessage!,
               style: TextStyle(
@@ -648,7 +978,7 @@ class _BeforeAfterSection extends ConsumerWidget {
             key: const Key('home_before_after_list'),
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
             itemCount: posts.length,
             separatorBuilder: (context, i) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
@@ -846,151 +1176,10 @@ class _StatChip extends StatelessWidget {
   }
 }
 
-// ──────────────────────────────────────────────
-// _QuickMenuSection — 빠른 메뉴 2x2 grid
-// ──────────────────────────────────────────────
-
-class _QuickMenuSection extends StatelessWidget {
-  const _QuickMenuSection();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SectionHeader(title: '빠른 메뉴'),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            key: const Key('home_quick_menu_grid'),
-            children: [
-              Expanded(child: _QuickMenuCard(
-                key: const Key('quick_menu_consultation'),
-                icon: LucideIcons.clipboardList,
-                label: '상담요청',
-                color: const Color(0xFF6C5CE7),
-                onTap: () => context.go('/consultation/create'),
-              )),
-              const SizedBox(width: 12),
-              Expanded(child: _QuickMenuCard(
-                key: const Key('quick_menu_hospital'),
-                icon: LucideIcons.stethoscope,
-                label: '병원찾기',
-                color: const Color(0xFF00B894),
-                onTap: () => context.go('/hospital'),
-              )),
-              const SizedBox(width: 12),
-              Expanded(child: _QuickMenuCard(
-                key: const Key('quick_menu_community'),
-                icon: LucideIcons.messagesSquare,
-                label: '커뮤니티',
-                color: const Color(0xFFE17055),
-                onTap: () => context.go('/community'),
-              )),
-              const SizedBox(width: 12),
-              Expanded(child: _QuickMenuCard(
-                key: const Key('quick_menu_chat'),
-                icon: LucideIcons.messageCircle,
-                label: '채팅',
-                color: const Color(0xFF0984E3),
-                onTap: () => context.go('/chat'),
-              )),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ──────────────────────────────────────────────
-// _QuickMenuCard
-// ──────────────────────────────────────────────
-
-class _QuickMenuCard extends StatelessWidget {
-  const _QuickMenuCard({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: label,
-      child: Material(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          splashColor: color.withValues(alpha: 0.08),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(icon, color: color, size: 22),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontFamily: 'Pretendard',
-                  ),
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 // ──────────────────────────────────────────────
 // Loading / Shimmer placeholders
 // ──────────────────────────────────────────────
-
-class _ShimmerChip extends StatelessWidget {
-  const _ShimmerChip();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 80,
-      height: 36,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(22),
-      ),
-    );
-  }
-}
 
 class _PostsLoadingPlaceholder extends StatelessWidget {
   const _PostsLoadingPlaceholder();

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/cached_image.dart';
 import '../data/auction_models.dart';
 import '../data/auction_repository.dart';
@@ -196,7 +197,7 @@ class _AuctionDetailContentState extends ConsumerState<_AuctionDetailContent> {
         },
         child: ListView(
           key: const Key('auction_detail_scroll'),
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 16, AppSpacing.pagePadding, 32),
           children: [
             // ── Request summary card ─────────────────
             _RequestSummaryCard(

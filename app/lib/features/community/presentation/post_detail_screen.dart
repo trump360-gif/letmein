@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../features/auth/presentation/auth_provider.dart';
 import '../../../shared/widgets/cached_image.dart';
 import '../data/community_models.dart';
@@ -215,7 +216,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                   // ── Post body card ────────────────────
                   Container(
                     color: Theme.of(context).colorScheme.surface,
-                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+                    padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 20, AppSpacing.pagePadding, 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -408,7 +409,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                   // ── Comments section ──────────────────
                   Container(
                     color: Theme.of(context).colorScheme.surface,
-                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+                    padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 20, AppSpacing.pagePadding, 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

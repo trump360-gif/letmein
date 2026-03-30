@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../auth/presentation/auth_provider.dart';
 
 class MyPageScreen extends ConsumerWidget {
@@ -37,7 +38,7 @@ class MyPageScreen extends ConsumerWidget {
             profileImageUrl: user?.profileImageUrl,
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sectionGap),
 
           // ── Menu Group 1: 내 활동 ─────────────────
           _MenuGroupLabel(label: '내 활동'),
@@ -65,9 +66,9 @@ class MyPageScreen extends ConsumerWidget {
             },
           ),
 
-          const SizedBox(height: 8),
-          Divider(thickness: 6, color: Theme.of(context).colorScheme.surfaceContainerHighest, height: 6),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sectionGap),
+          Divider(height: 1, thickness: 1, color: Theme.of(context).dividerColor),
+          const SizedBox(height: AppSpacing.sectionGap),
 
           // ── Menu Group 2: 설정 ────────────────────
           _MenuGroupLabel(label: '설정'),
@@ -107,9 +108,9 @@ class MyPageScreen extends ConsumerWidget {
               onTap: () => context.push(AppRoutes.castApply),
             ),
 
-          const SizedBox(height: 8),
-          Divider(thickness: 6, color: Theme.of(context).colorScheme.surfaceContainerHighest, height: 6),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sectionGap),
+          Divider(height: 1, thickness: 1, color: Theme.of(context).dividerColor),
+          const SizedBox(height: AppSpacing.sectionGap),
 
           // ── Menu Group 3: 계정 ────────────────────
           _MenuGroupLabel(label: '계정'),
@@ -256,7 +257,7 @@ class _WithdrawingBanner extends StatelessWidget {
       key: const Key('withdrawing_banner'),
       width: double.infinity,
       color: colorScheme.surfaceContainerHighest,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding, vertical: 12),
       child: Row(
         children: [
           Icon(
@@ -310,14 +311,14 @@ class _MenuGroupLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 0, AppSpacing.pagePadding, 6),
       child: Text(
         label,
         style: TextStyle(
           fontSize: 12,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w500,
           color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-          letterSpacing: 0.5,
+          letterSpacing: 0.3,
         ),
       ),
     );
@@ -351,30 +352,50 @@ class _MenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      key: testKey,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
-      leading: Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: iconBgColor,
-          borderRadius: BorderRadius.circular(10),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ListTile(
+          key: testKey,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.pagePadding,
+            vertical: AppSpacing.sm,
+          ),
+          minVerticalPadding: AppSpacing.sm,
+          leading: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: iconBgColor,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 18, color: iconColor),
+          ),
+          title: Text(
+            title,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w400,
+              color: titleColor,
+            ),
+          ),
+          trailing: showChevron
+              ? Icon(
+                  LucideIcons.chevronRight,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
+                  size: 18,
+                )
+              : null,
+          onTap: onTap,
         ),
-        child: Icon(icon, size: 20, color: iconColor),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w500,
-          color: titleColor,
+        Divider(
+          height: 1,
+          thickness: 1,
+          indent: AppSpacing.pagePadding,
+          endIndent: AppSpacing.pagePadding,
+          color: Theme.of(context).dividerColor,
         ),
-      ),
-      trailing: showChevron
-          ? Icon(LucideIcons.chevronRight, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3), size: 20)
-          : null,
-      onTap: onTap,
+      ],
     );
   }
 }
@@ -397,25 +418,15 @@ class _ProfileHeader extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      margin: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, AppSpacing.pagePadding, AppSpacing.pagePadding, 0),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding, vertical: 28),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            colorScheme.primary,
-            colorScheme.primary.withValues(alpha: 0.75),
-          ],
+        color: colorScheme.primary,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.primary.withValues(alpha: 0.6),
+          width: 1,
         ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.primary.withValues(alpha: 0.28),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
       ),
       child: Row(
         children: [
@@ -426,21 +437,21 @@ class _ProfileHeader extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.6),
-                  width: 2.5,
+                  color: Colors.white.withValues(alpha: 0.4),
+                  width: 1,
                 ),
               ),
               child: CircleAvatar(
                 key: const Key('profile_avatar'),
-                radius: 34,
-                backgroundColor: Colors.white.withValues(alpha: 0.25),
+                radius: 32,
+                backgroundColor: Colors.white.withValues(alpha: 0.2),
                 backgroundImage: profileImageUrl != null
                     ? NetworkImage(profileImageUrl!)
                     : null,
                 child: profileImageUrl == null
                     ? const Icon(
                         LucideIcons.user,
-                        size: 34,
+                        size: 30,
                         color: Colors.white,
                       )
                     : null,
@@ -459,8 +470,8 @@ class _ProfileHeader extends StatelessWidget {
                   nickname,
                   key: const Key('profile_nickname'),
                   style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),
                 ),
@@ -469,7 +480,8 @@ class _ProfileHeader extends StatelessWidget {
                   'LetMeIn 회원',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.white.withValues(alpha: 0.75),
+                    fontWeight: FontWeight.w400,
+                    color: Colors.white.withValues(alpha: 0.7),
                   ),
                 ),
               ],

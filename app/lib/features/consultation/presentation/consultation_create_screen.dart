@@ -8,6 +8,7 @@ import '../../../core/router/app_router.dart';
 import '../../../shared/models/image_model.dart';
 import '../../../shared/utils/keyword_filter.dart';
 import '../../../shared/widgets/image_upload_widget.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../hospital/presentation/hospital_provider.dart';
 import 'consultation_provider.dart';
 
@@ -108,38 +109,22 @@ class _ConsultationCreateScreenState
       body: ListView(
         key: const Key('consultation_create_scroll'),
         controller: _scrollController,
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
+        padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 0, AppSpacing.pagePadding, 120),
         children: [
           // ── Coordinator banner ───────────────────
           Container(
             margin: const EdgeInsets.symmetric(vertical: 16),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  colorScheme.primary.withValues(alpha: 0.08),
-                  colorScheme.primary.withValues(alpha: 0.04),
-                ],
-              ),
+              color: colorScheme.primary.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: colorScheme.primary.withValues(alpha: 0.2),
-              ),
             ),
             child: Row(
               children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    LucideIcons.userCheck,
-                    size: 20,
-                    color: colorScheme.primary,
-                  ),
+                Icon(
+                  LucideIcons.userCheck,
+                  size: 20,
+                  color: colorScheme.primary,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -226,42 +211,20 @@ class _ConsultationCreateScreenState
                           border: Border.all(
                             color: isSelected
                                 ? colorScheme.primary
-                                : colorScheme.outline,
-                            width: isSelected ? 1.5 : 1,
+                                : colorScheme.outline.withValues(alpha: 0.35),
+                            width: 1,
                           ),
-                          boxShadow: isSelected
-                              ? [
-                                  BoxShadow(
-                                    color: colorScheme.primary
-                                        .withValues(alpha: 0.18),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ]
-                              : null,
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? colorScheme.primary
-                                        .withValues(alpha: 0.15)
-                                    : colorScheme.surfaceContainerHighest,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: Icon(
-                                  LucideIcons.syringe,
-                                  size: 20,
-                                  color: isSelected
-                                      ? colorScheme.primary
-                                      : colorScheme.onSurface.withValues(alpha: 0.5),
-                                ),
-                              ),
+                            Icon(
+                              LucideIcons.syringe,
+                              size: 22,
+                              color: isSelected
+                                  ? colorScheme.primary
+                                  : colorScheme.onSurface
+                                      .withValues(alpha: 0.4),
                             ),
                             const SizedBox(height: 7),
                             Text(
@@ -289,7 +252,7 @@ class _ConsultationCreateScreenState
             },
           ),
 
-          const SizedBox(height: 28),
+          const SizedBox(height: AppSpacing.sectionGap),
 
           // ── Section 2: Detail selection ─────────
           _SectionHeader(
@@ -327,16 +290,50 @@ class _ConsultationCreateScreenState
                 children: selectedCat.details.map((detail) {
                   final isSelected =
                       formState.selectedDetailIds.contains(detail.id);
+                  final colorScheme = Theme.of(context).colorScheme;
                   return Semantics(
                     selected: isSelected,
-                    child: FilterChip(
+                    button: true,
+                    label: '${detail.name} 세부 시술',
+                    child: InkWell(
                       key: Key(
                           'consultation_create_detail_chip_${detail.id}'),
-                      label: Text(detail.name),
-                      selected: isSelected,
-                      onSelected: (_) => ref
+                      onTap: () => ref
                           .read(createConsultationProvider.notifier)
                           .toggleDetail(detail.id),
+                      borderRadius: BorderRadius.circular(20),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? colorScheme.primary
+                              : colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isSelected
+                                ? colorScheme.primary
+                                : colorScheme.outline.withValues(alpha: 0.4),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          detail.name,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
+                                color: isSelected
+                                    ? Colors.white
+                                    : colorScheme.onSurface
+                                        .withValues(alpha: 0.75),
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                              ),
+                        ),
+                      ),
                     ),
                   );
                 }).toList(),
@@ -344,7 +341,7 @@ class _ConsultationCreateScreenState
             },
           ),
 
-          const SizedBox(height: 28),
+          const SizedBox(height: AppSpacing.sectionGap),
 
           // ── Section 3: 민감정보 동의 (사진 업로드 전 필수) ────
           _SectionHeader(
@@ -365,7 +362,7 @@ class _ConsultationCreateScreenState
             },
           ),
 
-          const SizedBox(height: 28),
+          const SizedBox(height: AppSpacing.sectionGap),
 
           // ── Section 4: Photo upload ─────────────
           _SectionHeader(
@@ -387,11 +384,8 @@ class _ConsultationCreateScreenState
               key: const Key('consultation_create_photo_locked'),
               height: 90,
               decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
+                color: colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: theme.colorScheme.outline.withValues(alpha: 0.5),
-                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -428,7 +422,7 @@ class _ConsultationCreateScreenState
             ),
           ],
 
-          const SizedBox(height: 28),
+          const SizedBox(height: AppSpacing.sectionGap),
 
           // ── Section 5: Photo public toggle ──────
           _SectionHeader(
@@ -444,7 +438,6 @@ class _ConsultationCreateScreenState
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: colorScheme.outline),
             ),
             child: Row(
               children: [
@@ -455,7 +448,7 @@ class _ConsultationCreateScreenState
                       Text(
                         '코디네이터에게 사진 공개',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -484,7 +477,7 @@ class _ConsultationCreateScreenState
             ),
           ),
 
-          const SizedBox(height: 28),
+          const SizedBox(height: AppSpacing.sectionGap),
 
           // ── Section 6: Description (optional) ──
           _SectionHeader(
@@ -507,14 +500,29 @@ class _ConsultationCreateScreenState
               key: const Key('consultation_create_description_field'),
               controller: _descController,
               maxLength: 500,
-              maxLines: 4,
+              minLines: 5,
+              maxLines: null,
               textInputAction: TextInputAction.newline,
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
                 hintText: '원하시는 시술 내용, 현재 상태, 우려되는 점 등을 적어주세요.',
+                hintStyle: TextStyle(
+                  color: colorScheme.onSurface.withValues(alpha: 0.35),
+                  fontSize: 14,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: colorScheme.outline.withValues(alpha: 0.4),
+                  ),
                 ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: colorScheme.outline.withValues(alpha: 0.3),
+                  ),
+                ),
+                contentPadding: const EdgeInsets.all(16),
                 filled: true,
                 counterText:
                     '${formState.description.trim().length}/500',
@@ -523,7 +531,7 @@ class _ConsultationCreateScreenState
             ),
           ),
 
-          const SizedBox(height: 28),
+          const SizedBox(height: AppSpacing.sectionGap),
 
           // ── Section 7: Preferred period ─────────
           _SectionHeader(
@@ -541,17 +549,45 @@ class _ConsultationCreateScreenState
               final optLabel = option.$1;
               final optValue = option.$2;
               final isSelected = formState.preferredPeriod == optValue;
+              final colorScheme = Theme.of(context).colorScheme;
               return Semantics(
                 selected: isSelected,
-                child: ChoiceChip(
-                  key: Key(
-                      'consultation_create_period_chip_$optValue'),
-                  label: Text(optLabel),
-                  selected: isSelected,
-                  onSelected: (_) => ref
+                button: true,
+                label: '$optLabel 선택',
+                child: InkWell(
+                  key: Key('consultation_create_period_chip_$optValue'),
+                  onTap: () => ref
                       .read(createConsultationProvider.notifier)
-                      .setPreferredPeriod(
-                          isSelected ? null : optValue),
+                      .setPreferredPeriod(isSelected ? null : optValue),
+                  borderRadius: BorderRadius.circular(20),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? colorScheme.primary
+                          : colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isSelected
+                            ? colorScheme.primary
+                            : colorScheme.outline.withValues(alpha: 0.4),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      optLabel,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: isSelected
+                            ? Colors.white
+                            : colorScheme.onSurface.withValues(alpha: 0.75),
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                      ),
+                    ),
+                  ),
                 ),
               );
             }).toList(),
@@ -590,35 +626,28 @@ class _SectionHeader extends StatelessWidget {
 
     return Row(
       children: [
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            icon,
-            size: 17,
-            color: colorScheme.onPrimaryContainer,
-          ),
+        Icon(
+          icon,
+          size: 16,
+          color: colorScheme.onSurface.withValues(alpha: 0.45),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
         Text(
           title,
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+                color: colorScheme.onSurface.withValues(alpha: 0.75),
               ),
         ),
         if (required) ...[
-          const SizedBox(width: 4),
+          const SizedBox(width: 3),
           Text(
             '*',
             style: TextStyle(
-              color: Colors.red[600],
-              fontWeight: FontWeight.bold,
-              fontSize: 15,
+              color: Colors.red[400],
+              fontWeight: FontWeight.w500,
+              fontSize: 13,
             ),
           ),
         ],
@@ -652,13 +681,14 @@ class _SensitiveConsentWidget extends StatelessWidget {
     return Container(
       key: const Key('consultation_sensitive_consent'),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: consented
-              ? colorScheme.primary.withValues(alpha: 0.5)
-              : colorScheme.outline.withValues(alpha: 0.6),
-        ),
+        border: consented
+            ? Border.all(
+                color: colorScheme.primary.withValues(alpha: 0.4),
+                width: 1,
+              )
+            : null,
       ),
       child: Column(
         children: [
@@ -845,61 +875,48 @@ class _SubmitButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.0),
-            Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.95),
-            Theme.of(context).scaffoldBackgroundColor,
-          ],
-          stops: const [0.0, 0.3, 1.0],
-        ),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-          child: AnimatedOpacity(
-            opacity: isValid ? 1.0 : 0.5,
-            duration: const Duration(milliseconds: 200),
-            child: SizedBox(
-              width: double.infinity,
-              height: 54,
-              child: ElevatedButton(
-                key: const Key('consultation_create_submit_btn'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: Colors.white,
-                  elevation: isValid ? 4 : 0,
-                  shadowColor:
-                      colorScheme.primary.withValues(alpha: 0.4),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                onPressed: (isValid && !isSubmitting) ? onSubmit : null,
-                child: isSubmitting
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white),
-                        ),
-                      )
-                    : const Text(
-                        '상담 접수하기',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.pagePadding, 12, AppSpacing.pagePadding, 16),
+        child: SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton(
+            key: const Key('consultation_create_submit_btn'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isValid
+                  ? colorScheme.primary
+                  : colorScheme.primary.withValues(alpha: 0.38),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shadowColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
+            onPressed: (isValid && !isSubmitting) ? onSubmit : null,
+            child: isSubmitting
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Text(
+                    '상담 접수하기',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.3,
+                      color: isValid
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.6),
+                    ),
+                  ),
           ),
         ),
       ),

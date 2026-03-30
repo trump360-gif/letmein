@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/theme/app_theme.dart';
 
 class AgreementScreen extends StatefulWidget {
   const AgreementScreen({super.key});
@@ -75,7 +76,7 @@ class _AgreementScreenState extends State<AgreementScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 32),
+                    const SizedBox(height: AppSpacing.sectionGap),
 
                     // ── All agree ─────────────────────
                     _AllAgreeRow(
@@ -137,7 +138,7 @@ class _AgreementScreenState extends State<AgreementScreen> {
 
             // ── Next button ───────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+              padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 0, AppSpacing.pagePadding, AppSpacing.sectionGap),
               child: SizedBox(
                 width: double.infinity,
                 height: 52,

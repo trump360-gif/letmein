@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../data/auth_repository.dart';
 import 'auth_provider.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// Availability state for the nickname field.
 enum _NicknameAvailability { idle, checking, available, unavailable, error }
@@ -190,11 +191,11 @@ class _NicknameScreenState extends ConsumerState<NicknameScreen> {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: AppSpacing.pageH,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpacing.sectionGap),
 
               const Text(
                 '어떻게 불러드릴까요?',

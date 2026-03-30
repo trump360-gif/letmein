@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../shared/widgets/cached_image.dart';
 import '../../../shared/utils/keyword_filter.dart';
+import '../../../core/theme/app_theme.dart';
 import '../data/chat_models.dart';
 import '../data/chat_repository.dart';
 import 'chat_provider.dart';
@@ -217,7 +218,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
       appBar: AppBar(
         title: Text(
           room.otherName.isEmpty ? '채팅' : room.otherName,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: const TextStyle(fontWeight: FontWeight.w500),
         ),
         centerTitle: false,
         actions: [
@@ -254,16 +255,35 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
           if (isClosed)
             Container(
               key: const Key('chat_closed_banner'),
-              padding: const EdgeInsets.all(12),
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.pagePadding,
+                vertical: AppSpacing.md,
+              ),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                border: Border(
+                  top: BorderSide(
+                    color: Theme.of(context).dividerColor,
+                    width: 1,
+                  ),
+                ),
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(LucideIcons.lock, size: 16, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
+                  Icon(
+                    LucideIcons.lock,
+                    size: 14,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     '종료된 상담입니다.',
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), fontSize: 13),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
                 ],
               ),
@@ -310,7 +330,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     return ListView.builder(
       key: const Key('chat_messages_list'),
       controller: _scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding, vertical: AppSpacing.md),
       itemCount: (state.isLoadingMore ? 1 : 0) + items.length,
       itemBuilder: (context, index) {
         if (state.isLoadingMore && index == 0) {
@@ -472,11 +492,14 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     return SafeArea(
       child: Container(
         key: const Key('chat_input_bar'),
-        padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+        padding: const EdgeInsets.fromLTRB(AppSpacing.sm, 8, AppSpacing.sm, 10),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           border: Border(
-            top: BorderSide(color: Theme.of(context).dividerColor),
+            top: BorderSide(
+              color: Theme.of(context).dividerColor,
+              width: 1,
+            ),
           ),
         ),
         child: Column(
@@ -484,7 +507,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
           children: [
             // ── Visit + Contact quick actions ───────
             Padding(
-              padding: const EdgeInsets.only(bottom: 4),
+              padding: const EdgeInsets.only(bottom: 8),
               child: Row(
                 children: [
                   _QuickActionChip(
@@ -525,16 +548,37 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                     maxLines: 4,
                     minLines: 1,
                     textInputAction: TextInputAction.newline,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                    ),
                     decoration: InputDecoration(
                       hintText: '메시지를 입력하세요...',
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide.none,
+                        borderRadius: BorderRadius.circular(22),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).dividerColor,
+                          width: 1,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(22),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).dividerColor,
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(22),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+                          width: 1,
+                        ),
                       ),
                       filled: true,
                       fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
+                          horizontal: 16, vertical: 12),
                     ),
                   ),
                 ),
@@ -573,7 +617,7 @@ class _DisclaimerBanner extends StatelessWidget {
     return Container(
       key: const Key('chat_disclaimer_banner'),
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding, vertical: 8),
       color: colorScheme.surfaceContainerHighest,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -668,20 +712,26 @@ class _MessageBubble extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         mainAxisAlignment:
             isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMine) ...[
-            CircleAvatar(
-              radius: 14,
-              backgroundColor: theme.colorScheme.primaryContainer,
-              child: Icon(
-                LucideIcons.user,
-                size: 16,
-                color: theme.colorScheme.onPrimaryContainer,
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: theme.dividerColor, width: 1),
+              ),
+              child: CircleAvatar(
+                radius: 14,
+                backgroundColor: theme.colorScheme.primaryContainer,
+                child: Icon(
+                  LucideIcons.user,
+                  size: 15,
+                  color: theme.colorScheme.onPrimaryContainer,
+                ),
               ),
             ),
             const SizedBox(width: 6),
@@ -704,16 +754,16 @@ class _MessageBubble extends StatelessWidget {
             child: Container(
               padding: message.messageType == MessageType.image
                   ? EdgeInsets.zero
-                  : const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: isMine
                     ? theme.colorScheme.primary
                     : theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: Radius.circular(isMine ? 16 : 4),
-                  bottomRight: Radius.circular(isMine ? 4 : 16),
+                  topLeft: const Radius.circular(14),
+                  topRight: const Radius.circular(14),
+                  bottomLeft: Radius.circular(isMine ? 14 : 4),
+                  bottomRight: Radius.circular(isMine ? 4 : 14),
                 ),
               ),
               child: message.messageType == MessageType.image
@@ -725,6 +775,7 @@ class _MessageBubble extends StatelessWidget {
                             ? theme.colorScheme.onPrimary
                             : theme.colorScheme.onSurface,
                         fontSize: 14,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
             ),
@@ -1024,7 +1075,7 @@ class _VisitConsultationSheetState extends State<_VisitConsultationSheet> {
       expand: false,
       builder: (ctx, sc) => Container(
         key: const Key('visit_consultation_sheet'),
-        padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+        padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 12, AppSpacing.pagePadding, AppSpacing.pagePadding),
         child: ListView(
           controller: sc,
           shrinkWrap: true,

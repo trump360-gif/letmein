@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/theme/app_theme.dart';
 import '../data/poll_models.dart';
 import '../data/poll_repository.dart';
 import 'poll_provider.dart';
@@ -83,7 +84,7 @@ class _PollDetailScreenState extends ConsumerState<PollDetailScreen> {
     final showResults = poll.hasVoted || poll.isClosed;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.pagePadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -106,7 +107,7 @@ class _PollDetailScreenState extends ConsumerState<PollDetailScreen> {
             ],
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.sectionGap),
 
           // Title
           Text(
@@ -126,7 +127,7 @@ class _PollDetailScreenState extends ConsumerState<PollDetailScreen> {
             ),
           ],
 
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.sectionGap),
 
           // Options
           ...poll.options.map((opt) {
@@ -163,7 +164,7 @@ class _PollDetailScreenState extends ConsumerState<PollDetailScreen> {
             ],
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.sectionGap),
 
           // Vote button
           if (!showResults && !poll.isClosed)

@@ -260,7 +260,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: AppRoutes.hospital,
-                builder: (context, state) => const HospitalListScreen(),
+                builder: (context, state) {
+                  final categoryName = state.uri.queryParameters['category'];
+                  return HospitalListScreen(initialCategory: categoryName);
+                },
                 routes: [
                   GoRoute(
                     path: ':id',

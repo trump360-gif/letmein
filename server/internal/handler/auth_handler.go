@@ -103,6 +103,28 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	})
 }
 
+// GET /api/v1/auth/me  (authenticated)
+func (h *AuthHandler) GetMe(c *gin.Context) {
+	userID, _ := c.Get(middleware.ContextKeyUserID)
+	uid, ok := userID.(int64)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	user, err := h.userRepo.GetByID(uid)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get user info"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": user})
+}
+
 // POST /api/v1/auth/logout  (authenticated)
 func (h *AuthHandler) Logout(c *gin.Context) {
 	userID, _ := c.Get(middleware.ContextKeyUserID)

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/image_model.dart';
 import '../../../shared/widgets/image_upload_widget.dart';
 import '../../hospital/presentation/hospital_provider.dart';
@@ -139,7 +140,7 @@ class _AuctionCreateScreenState extends ConsumerState<AuctionCreateScreen> {
         child: ListView(
           key: const Key('auction_create_scroll'),
           controller: _scrollController,
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 120),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 20, AppSpacing.pagePadding, 120),
           children: [
             // ── Section 1: Category ─────────────────
             _SectionHeader(
@@ -515,7 +516,7 @@ class _StepProgressBar extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 0, AppSpacing.pagePadding, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -649,7 +650,7 @@ class _SubmitButton extends StatelessWidget {
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 12, AppSpacing.pagePadding, 16),
           child: AnimatedOpacity(
             opacity: isValid ? 1.0 : 0.5,
             duration: const Duration(milliseconds: 200),

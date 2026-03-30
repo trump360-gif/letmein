@@ -3,12 +3,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/theme/app_theme.dart';
 import 'hospital_provider.dart';
 import 'hospital_card.dart';
 import '../data/hospital_models.dart';
 
 class HospitalListScreen extends ConsumerStatefulWidget {
-  const HospitalListScreen({super.key});
+  const HospitalListScreen({super.key, this.initialCategory});
+
+  final String? initialCategory;
 
   @override
   ConsumerState<HospitalListScreen> createState() =>
@@ -23,6 +26,18 @@ class _HospitalListScreenState extends ConsumerState<HospitalListScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+
+    // 홈에서 카테고리 선택 후 진입 시 자동 필터
+    if (widget.initialCategory != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final catAsync = ref.read(categoryProvider);
+        final categories = catAsync.whenOrNull(data: (d) => d) ?? [];
+        final match = categories.where((c) => c.name == widget.initialCategory).firstOrNull;
+        if (match != null) {
+          ref.read(hospitalSearchProvider.notifier).selectCategory(match.id);
+        }
+      });
+    }
   }
 
   @override
@@ -49,7 +64,7 @@ class _HospitalListScreenState extends ConsumerState<HospitalListScreen> {
       appBar: AppBar(
         title: const Text(
           '병원 탐색',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.w600),
         ),
         centerTitle: false,
       ),
@@ -57,7 +72,7 @@ class _HospitalListScreenState extends ConsumerState<HospitalListScreen> {
         children: [
           // ── Search bar ───────────────────────────
           Container(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 12, AppSpacing.pagePadding, 0),
             child: Semantics(
               label: '병원 검색',
               child: TextField(
@@ -98,7 +113,7 @@ class _HospitalListScreenState extends ConsumerState<HospitalListScreen> {
                   ),
                   filled: true,
                   fillColor: theme.colorScheme.surfaceContainerHighest,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 ),
                 onSubmitted: (value) {
                   ref
@@ -125,7 +140,7 @@ class _HospitalListScreenState extends ConsumerState<HospitalListScreen> {
                   return ListView(
                     key: const Key('hospital_filter_chips'),
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: AppSpacing.pageH,
                     children: [
                       // "전체" chip
                       Padding(
@@ -169,7 +184,7 @@ class _HospitalListScreenState extends ConsumerState<HospitalListScreen> {
           // ── Sort dropdown row ────────────────────
           Padding(
             padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding, vertical: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -298,7 +313,7 @@ class _HospitalListScreenState extends ConsumerState<HospitalListScreen> {
 
         // ── Regular list ─────────────────────────
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 4, AppSpacing.pagePadding, 24),
           sliver: SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
@@ -344,13 +359,13 @@ class _PremiumHospitalSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 12, AppSpacing.pagePadding, 8),
           child: Row(
             children: [
               Text(
                 '프리미엄 병원',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
               ),
@@ -379,24 +394,24 @@ class _PremiumHospitalSection extends StatelessWidget {
           key: const Key('hospital_premium_list'),
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 0, AppSpacing.pagePadding, 0),
           itemCount: items.length,
-          separatorBuilder: (_, i) => const SizedBox(height: 12),
+          separatorBuilder: (_, i) => const SizedBox(height: AppSpacing.itemGap),
           itemBuilder: (context, index) => HospitalCard(
             key: ValueKey('premium_hospital_card_${items[index].id}'),
             hospital: items[index],
           ),
         ),
         const Padding(
-          padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+          padding: EdgeInsets.fromLTRB(AppSpacing.pagePadding, AppSpacing.sectionGap, AppSpacing.pagePadding, 0),
           child: Divider(thickness: 1),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, AppSpacing.sm, AppSpacing.pagePadding, 4),
           child: Text(
             '일반 병원',
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
           ),

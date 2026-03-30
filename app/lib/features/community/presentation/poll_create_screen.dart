@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/theme/app_theme.dart';
 import '../data/poll_models.dart';
 import '../data/poll_repository.dart';
 import 'poll_provider.dart';
@@ -127,7 +128,7 @@ class _PollCreateScreenState extends ConsumerState<PollCreateScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(AppSpacing.pagePadding),
           children: [
             // ── Title ───────────────────────────────
             TextFormField(
@@ -144,7 +145,7 @@ class _PollCreateScreenState extends ConsumerState<PollCreateScreen> {
               },
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.sectionGap),
 
             // ── Description ─────────────────────────
             TextFormField(
@@ -158,7 +159,7 @@ class _PollCreateScreenState extends ConsumerState<PollCreateScreen> {
               maxLength: 500,
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.sectionGap),
 
             // ── Poll type toggle ─────────────────────
             Text('선택 방식',
@@ -176,7 +177,7 @@ class _PollCreateScreenState extends ConsumerState<PollCreateScreen> {
                   setState(() => _pollType = s.first),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.sectionGap),
 
             // ── Options ──────────────────────────────
             Row(
@@ -237,7 +238,7 @@ class _PollCreateScreenState extends ConsumerState<PollCreateScreen> {
                 label: const Text('선택지 추가'),
               ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpacing.sectionGap),
 
             // ── Submit ───────────────────────────────
             FilledButton(

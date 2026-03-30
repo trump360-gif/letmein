@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/theme/app_theme.dart';
 import '../data/cast_member_repository.dart';
 
 // ──────────────────────────────────────────────
@@ -192,7 +193,7 @@ class _CastApplyScreenState extends ConsumerState<CastApplyScreen> {
 
   Widget _buildForm() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding, vertical: 16),
       child: Form(
         key: _formKey,
         child: Column(

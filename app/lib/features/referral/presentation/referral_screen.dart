@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../auth/presentation/auth_provider.dart';
 
 // ──────────────────────────────────────────────
@@ -24,7 +25,7 @@ class ReferralScreen extends ConsumerWidget {
         title: const Text('친구 초대'),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding, vertical: AppSpacing.pagePadding),
         children: [
           // ── Hero banner ───────────────────────
           _HeroBanner(),

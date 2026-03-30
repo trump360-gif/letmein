@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../features/hospital/data/hospital_models.dart';
 import '../../../features/hospital/data/hospital_repository.dart';
 import '../../../features/hospital/presentation/hospital_provider.dart';
@@ -154,7 +155,7 @@ class _PostCreateScreenState extends ConsumerState<PostCreateScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.pagePadding),
           children: [
             // ── Error banner ──────────────────────
             if (_errorMessage != null) ...[
@@ -169,7 +170,7 @@ class _PostCreateScreenState extends ConsumerState<PostCreateScreen> {
                   style: TextStyle(color: theme.colorScheme.onErrorContainer),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.sectionGap),
             ],
 
             // ── Title field (자유게시판 only) ──────
@@ -192,7 +193,7 @@ class _PostCreateScreenState extends ConsumerState<PostCreateScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.sectionGap),
             ],
 
             // ── Category select (비포&애프터 only — required) ──
@@ -222,7 +223,7 @@ class _PostCreateScreenState extends ConsumerState<PostCreateScreen> {
                 error: (e, s) =>
                     const Text('카테고리를 불러오지 못했습니다.'),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.sectionGap),
             ],
 
             // ── Content ───────────────────────────
@@ -246,7 +247,7 @@ class _PostCreateScreenState extends ConsumerState<PostCreateScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.sectionGap),
 
             // ── Images ────────────────────────────
             Text('사진 (최대 10장)',
@@ -261,7 +262,7 @@ class _PostCreateScreenState extends ConsumerState<PostCreateScreen> {
                 setState(() => _uploadedImages = images);
               },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.sectionGap),
 
             // ── Hospital tag (비포&애프터 only) ───────
             if (!widget.isFreeBoard) ...[
@@ -328,7 +329,7 @@ class _PostCreateScreenState extends ConsumerState<PostCreateScreen> {
                   ),
                 ),
               ],
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.sectionGap),
             ],
 
             // ── Anonymous toggle ──────────────────
@@ -340,7 +341,7 @@ class _PostCreateScreenState extends ConsumerState<PostCreateScreen> {
               onChanged: (v) => setState(() => _isAnonymous = v),
               contentPadding: EdgeInsets.zero,
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpacing.sectionGap),
           ],
         ),
       ),

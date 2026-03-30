@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/cached_image.dart';
 import '../data/cast_member_models.dart';
 import 'cast_member_provider.dart';
@@ -107,7 +108,7 @@ class _CastStoryFeedScreenState
       child: ListView.separated(
         key: const Key('cast_story_feed_list'),
         controller: _scrollController,
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+        padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 12, AppSpacing.pagePadding, 96),
         itemCount:
             state.items.length + (state.isLoadingMore ? 1 : 0),
         separatorBuilder: (context, _) => const SizedBox(height: 12),

@@ -35,7 +35,10 @@ class HospitalCard extends StatelessWidget {
                     color: const Color(0xFFFFD700).withValues(alpha: 0.5),
                     width: 1,
                   )
-                : null,
+                : Border.all(
+                    color: theme.colorScheme.outline,
+                    width: 1,
+                  ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,12 +175,26 @@ class HospitalCard extends StatelessWidget {
                                   size: 13, color: Colors.amber[600]),
                               const SizedBox(width: 4),
                               Text(
-                                '후기 ${hospital.reviewCount}개',
+                                '후기 ',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              Text(
+                                '${hospital.reviewCount}',
                                 key: Key(
                                     'hospital_card_review_count_${hospital.id}'),
                                 style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.secondary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                '개',
+                                style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w400,
                                 ),
                               ),
                             ],

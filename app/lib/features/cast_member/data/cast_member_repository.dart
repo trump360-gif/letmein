@@ -121,8 +121,8 @@ class CastMemberRepository {
     required String bio,
   }) async {
     await _dio.post<void>('/cast-members/apply', data: {
-      'displayName': displayName,
-      'youtubeUrl': youtubeUrl,
+      'display_name': displayName,
+      'youtube_channel_url': youtubeUrl,
       'bio': bio,
     });
   }

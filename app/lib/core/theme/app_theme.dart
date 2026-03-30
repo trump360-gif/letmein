@@ -1,6 +1,41 @@
 import 'package:flutter/material.dart';
 
 // ──────────────────────────────────────────────
+// AppSpacing — 다이사 스타일 여백/간격 상수
+// 모든 화면에서 이 상수를 사용하여 일관된 레이아웃 유지
+// ──────────────────────────────────────────────
+
+class AppSpacing {
+  AppSpacing._();
+
+  /// 화면 좌우 패딩 (기존 16~20 → 24 통일)
+  static const double pagePadding = 24;
+
+  /// 화면 좌우 패딩 EdgeInsets
+  static const EdgeInsets pageH = EdgeInsets.symmetric(horizontal: 24);
+
+  /// 섹션 간 수직 간격 (기존 16 → 32)
+  static const double sectionGap = 32;
+
+  /// 카드 내부 패딩
+  static const double cardPadding = 16;
+
+  /// 리스트 아이템 간 간격
+  static const double itemGap = 12;
+
+  /// 섹션 헤더 아래 간격
+  static const double sectionHeaderBottom = 12;
+
+  /// 컴포넌트 내 작은 간격
+  static const double xs = 4;
+  static const double sm = 8;
+  static const double md = 16;
+  static const double lg = 24;
+  static const double xl = 32;
+  static const double xxl = 48;
+}
+
+// ──────────────────────────────────────────────
 // AppColors — PRD 13_design.md 다크 프리미엄 팔레트
 // ──────────────────────────────────────────────
 

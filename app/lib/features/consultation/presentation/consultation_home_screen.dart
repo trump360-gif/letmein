@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/theme/app_theme.dart';
 import 'consultation_provider.dart';
 import 'consultation_card.dart';
 
@@ -252,7 +253,7 @@ class _RequestListViewState extends ConsumerState<_RequestListView> {
       child: ListView.separated(
         key: const Key('consultation_list_view'),
         controller: _scrollController,
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+        padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, 16, AppSpacing.pagePadding, 96),
         itemCount: state.items.length + (state.isLoadingMore ? 1 : 0),
         separatorBuilder: (context, index) => const SizedBox(height: 12),
         itemBuilder: (context, index) {

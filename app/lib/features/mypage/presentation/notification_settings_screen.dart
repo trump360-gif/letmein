@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/theme/app_theme.dart';
 import 'notification_settings_provider.dart';
 
 class NotificationSettingsScreen extends ConsumerWidget {
@@ -95,7 +96,7 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, AppSpacing.pagePadding, AppSpacing.pagePadding, 4),
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelMedium?.copyWith(

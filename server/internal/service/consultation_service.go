@@ -39,12 +39,13 @@ type SendResponseInput struct {
 	ConsultHours   string
 }
 
-// SelectHospitalResult carries data needed to trigger a chat room after selection.
+// SelectHospitalResult carries data returned after hospital selection including the auto-created chat room.
 type SelectHospitalResult struct {
 	RequestID  int64 `json:"request_id"`
 	ResponseID int64 `json:"response_id"`
 	UserID     int64 `json:"user_id"`
 	HospitalID int64 `json:"hospital_id"`
+	ChatRoomID int64 `json:"chat_room_id,omitempty"`
 }
 
 // PaginatedConsultations is a generic paginated result for consultation requests.
@@ -70,17 +71,23 @@ type ConsultationService interface {
 type consultationService struct {
 	consultRepo  repository.ConsultationRepository
 	hospitalRepo repository.HospitalRepository
+	chatRepo     repository.ChatRepository
 }
 
 // NewConsultationService constructs a ConsultationService.
 func NewConsultationService(
 	consultRepo repository.ConsultationRepository,
 	hospitalRepo repository.HospitalRepository,
+	chatRepo ...repository.ChatRepository,
 ) ConsultationService {
-	return &consultationService{
+	svc := &consultationService{
 		consultRepo:  consultRepo,
 		hospitalRepo: hospitalRepo,
 	}
+	if len(chatRepo) > 0 {
+		svc.chatRepo = chatRepo[0]
+	}
+	return svc
 }
 
 func (s *consultationService) CreateRequest(userID int64, input CreateRequestInput) (*model.ConsultationRequestWithDetails, error) {
@@ -329,12 +336,23 @@ func (s *consultationService) SelectHospital(userID, requestID, responseID int64
 		return nil, fmt.Errorf("select response: %w", err)
 	}
 
-	return &SelectHospitalResult{
+	result := &SelectHospitalResult{
 		RequestID:  requestID,
 		ResponseID: responseID,
 		UserID:     userID,
 		HospitalID: selectedHospitalID,
-	}, nil
+	}
+
+	// Auto-create chat room when hospital is selected.
+	if s.chatRepo != nil {
+		room, err := s.chatRepo.CreateRoom(requestID, userID, selectedHospitalID)
+		if err == nil && room != nil {
+			result.ChatRoomID = room.ID
+		}
+		// Non-fatal: if chat room creation fails, selection still succeeds.
+	}
+
+	return result, nil
 }
 
 func (s *consultationService) CancelRequest(userID, requestID int64) error {
