@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@letmein/db'
+import { getSessionAdminId } from '@/lib/session'
 
 export async function POST(
   request: NextRequest,
@@ -45,8 +46,7 @@ export async function POST(
       )
     }
 
-    // TODO: Get actual admin user ID from session
-    const adminUserId = BigInt(1)
+    const adminUserId = await getSessionAdminId() ?? BigInt(1)
 
     await prisma.$transaction(async (tx) => {
       // 1. Update report status

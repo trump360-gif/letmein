@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@letmein/db'
+import { getSessionAdminId } from '@/lib/session'
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -13,13 +14,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       )
     }
 
+    const adminId = await getSessionAdminId() ?? BigInt(1)
+
     await prisma.adCreative.update({
       where: { id: BigInt(params.id) },
       data: {
         reviewStatus,
         rejectionReason: reviewStatus === 'rejected' ? (rejectionReason || null) : null,
         reviewedAt: new Date(),
-        reviewedBy: BigInt(1), // TODO: get from session
+        reviewedBy: adminId,
       },
     })
 

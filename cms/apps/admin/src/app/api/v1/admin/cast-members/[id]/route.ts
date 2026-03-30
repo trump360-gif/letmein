@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@letmein/db'
+import { getSessionAdminId } from '@/lib/session'
 
 export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -53,11 +54,13 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const body = await request.json()
     const { status, reason } = body
 
+    const adminId = await getSessionAdminId() ?? BigInt(1)
+
     const data: Record<string, unknown> = {}
     if (status === 'verified') {
       data.verificationStatus = 'verified'
       data.verifiedAt = new Date()
-      data.verifiedBy = BigInt(1) // TODO: get from session
+      data.verifiedBy = adminId
     } else if (status === 'rejected') {
       data.verificationStatus = 'rejected'
       data.rejectionReason = reason || null

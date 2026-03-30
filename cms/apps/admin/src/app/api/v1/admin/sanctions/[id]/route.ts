@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@letmein/db'
+import { getSessionAdminId } from '@/lib/session'
 
 export async function DELETE(
   _request: NextRequest,
@@ -33,8 +34,7 @@ export async function DELETE(
       )
     }
 
-    // TODO: Get actual admin user ID from session
-    const adminUserId = BigInt(1)
+    const adminUserId = await getSessionAdminId() ?? BigInt(1)
 
     await prisma.$transaction(async (tx) => {
       await tx.sanction.update({

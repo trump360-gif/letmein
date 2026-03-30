@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@letmein/db'
+import { getSessionAdminId } from '@/lib/session'
 
 export async function GET(request: NextRequest) {
   try {
@@ -113,8 +114,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // TODO: Get actual admin user ID from session
-    const adminUserId = BigInt(1)
+    const adminUserId = await getSessionAdminId() ?? BigInt(1)
 
     const days = durationDays ?? getDefaultDuration(type)
     const expiresAt = days ? new Date(Date.now() + days * 24 * 60 * 60 * 1000) : null
