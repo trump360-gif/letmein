@@ -134,11 +134,16 @@ body{background:#0D0D0D;color:#fff;font-family:-apple-system,BlinkMacSystemFont,
 		}
 
 		// Hospital routes (Phase 2)
+		reviewRepo := repository.NewReviewRepository(db)
+		reviewSvc := service.NewReviewService(reviewRepo, consultRepo)
+		reviewH := NewReviewHandler(reviewSvc)
+
 		hospitals := v1.Group("/hospitals")
 		{
 			// Public endpoints
 			hospitals.GET("", hospitalH.Search)
 			hospitals.GET("/:id", hospitalH.GetByID)
+			hospitals.GET("/:id/reviews", reviewH.ListByHospital)
 
 			// Any authenticated user can register as a hospital
 			hospitals.POST("/register", authRequired, hospitalH.Register)
@@ -148,6 +153,14 @@ body{background:#0D0D0D;color:#fff;font-family:-apple-system,BlinkMacSystemFont,
 			hospitals.GET("/profile", hospitalOnly, hospitalH.GetProfile)
 			hospitals.PUT("/profile", hospitalOnly, hospitalH.UpdateProfile)
 			hospitals.GET("/dashboard", hospitalOnly, hospitalH.GetDashboard)
+		}
+
+		// Review routes
+		reviews := v1.Group("/reviews")
+		{
+			reviews.POST("", authRequired, reviewH.CreateReview)
+			reviews.PUT("/:id", authRequired, reviewH.UpdateReview)
+			reviews.DELETE("/:id", authRequired, reviewH.DeleteReview)
 		}
 
 		// Category routes (Phase 2)

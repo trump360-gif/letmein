@@ -27,6 +27,8 @@ import '../../features/referral/presentation/referral_screen.dart';
 import '../../features/cast_member/presentation/cast_member_profile_screen.dart';
 import '../../features/cast_member/presentation/cast_story_feed_screen.dart';
 import '../../features/cast_member/presentation/cast_apply_screen.dart';
+import '../../features/review/presentation/review_list_screen.dart';
+import '../../features/review/presentation/review_write_screen.dart';
 
 // ──────────────────────────────────────────────
 // Route paths
@@ -57,6 +59,7 @@ class AppRoutes {
   static const castMembers = '/cast-members';
   static const castMemberProfile = '/cast-members/:id';
   static const castStories = '/cast-stories';
+  static const reviewWrite = '/review/write';
 }
 
 // ──────────────────────────────────────────────
@@ -150,6 +153,16 @@ final routerProvider = Provider<GoRouter>((ref) {
             },
           ),
         ],
+      ),
+
+      // ── Review Write Route (full-screen, outside tab shell) ──
+      GoRoute(
+        path: AppRoutes.reviewWrite,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final hospitalId = extra?['hospitalId'] as int?;
+          return ReviewWriteScreen(initialHospitalId: hospitalId);
+        },
       ),
 
       // ── Cast Member Routes (full-screen, outside tab shell) ──
@@ -272,6 +285,16 @@ final routerProvider = Provider<GoRouter>((ref) {
                           int.parse(state.pathParameters['id']!);
                       return HospitalDetailScreen(hospitalId: id);
                     },
+                    routes: [
+                      GoRoute(
+                        path: 'reviews',
+                        builder: (context, state) {
+                          final id =
+                              int.parse(state.pathParameters['id']!);
+                          return ReviewListScreen(hospitalId: id);
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),

@@ -7,6 +7,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../shared/widgets/cached_image.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../features/review/presentation/review_section.dart';
 import '../data/hospital_models.dart';
 import 'hospital_provider.dart';
 
@@ -418,35 +419,10 @@ class _HospitalDetailBody extends StatelessWidget {
                   const Divider(),
                   const SizedBox(height: 16),
 
-                  // ── Review section (placeholder) ───
-                  Row(
-                    children: [
-                      Icon(LucideIcons.star,
-                          color: colorScheme.primary),
-                      const SizedBox(width: 8),
-                      Text(
-                        '태깅 후기',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '후기 ${hospital.reviewCount}개',
-                    key: const Key('hospital_detail_review_count'),
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurface.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '후기 목록은 Phase 5에서 구현됩니다.',
-                    key: const Key('hospital_detail_review_placeholder'),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurface.withValues(alpha: 0.3),
-                    ),
+                  // ── Review section ─────────────────
+                  ReviewSection(
+                    key: Key('hospital_detail_review_section_${hospital.id}'),
+                    hospitalId: hospital.id,
                   ),
 
                   // Bottom padding for the FAB
