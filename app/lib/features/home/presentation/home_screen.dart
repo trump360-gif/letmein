@@ -1248,8 +1248,6 @@ class _ThemePickerSheet extends StatelessWidget {
     final presets = [
       (ThemePreset.dark, '다크', Color(0xFF0D0D0D), Color(0xFFC0392B)),
       (ThemePreset.light, '라이트', Color(0xFFFAF8F5), Color(0xFFC0392B)),
-      (ThemePreset.cream, '크림+버건디', Color(0xFFFAF8F5), Color(0xFFC0392B)),
-      (ThemePreset.rose, '로즈', Color(0xFFFDF6EE), Color(0xFF9B4157)),
     ];
 
     return Padding(

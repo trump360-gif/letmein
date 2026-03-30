@@ -36,14 +36,12 @@ class AppSpacing {
 }
 
 // ──────────────────────────────────────────────
-// ThemePreset — 4가지 테마 프리셋
+// ThemePreset — 다크 / 라이트
 // ──────────────────────────────────────────────
 
 enum ThemePreset {
   dark('다크', '0D0D0D'),
-  light('라이트', 'FAF8F5'),
-  cream('크림+버건디', 'FAF8F5'),
-  rose('로즈', 'FDF6EE');
+  light('라이트', 'FAF8F5');
 
   const ThemePreset(this.label, this.bgHex);
   final String label;
@@ -212,131 +210,6 @@ class AppTheme {
     dividerTheme: _lightDividerTheme,
   );
 
-  // ── Cream + Burgundy Theme (크림+버건디) ──────
-  static final cream = ThemeData(
-    useMaterial3: true,
-    brightness: Brightness.light,
-    colorScheme: const ColorScheme(
-      brightness: Brightness.light,
-      primary: Color(0xFFC0392B),
-      onPrimary: Colors.white,
-      primaryContainer: Color(0xFFFFDAD6),
-      onPrimaryContainer: Color(0xFF410002),
-      secondary: Color(0xFFD4A574),
-      onSecondary: Colors.white,
-      secondaryContainer: Color(0xFFF5E6D3),
-      onSecondaryContainer: Color(0xFF3E2A1A),
-      tertiary: Color(0xFFD4A574),
-      onTertiary: Colors.white,
-      tertiaryContainer: Color(0xFFF5E6D3),
-      onTertiaryContainer: Color(0xFF3E2A1A),
-      error: Color(0xFFBA1A1A),
-      onError: Colors.white,
-      surface: Colors.white,
-      onSurface: Color(0xFF1A1A1A),
-      surfaceContainerHighest: Color(0xFFF0EDE8),
-      onSurfaceVariant: Color(0xFF666666),
-      outline: Color(0xFFD5CFC7),
-      outlineVariant: Color(0xFFEAE5DD),
-      shadow: Colors.black,
-      scrim: Colors.black,
-      inverseSurface: Color(0xFF1A1A1A),
-      onInverseSurface: Colors.white,
-      inversePrimary: Color(0xFFFFB4AB),
-    ),
-    fontFamily: _fontFamily,
-    scaffoldBackgroundColor: const Color(0xFFFAF8F5),
-    textTheme: _textTheme,
-    cardTheme: _lightCardTheme,
-    appBarTheme: AppBarTheme(
-      backgroundColor: const Color(0xFFFAF8F5),
-      foregroundColor: const Color(0xFF1A1A1A),
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      titleTextStyle: const TextStyle(
-        fontFamily: _fontFamily,
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-        color: Color(0xFF1A1A1A),
-      ),
-    ),
-    navigationBarTheme: _lightNavigationBarTheme,
-    elevatedButtonTheme: _lightElevatedButtonTheme,
-    inputDecorationTheme: _lightInputDecorationTheme,
-    dividerTheme: _lightDividerTheme,
-  );
-
-  // ── Rose Theme (오프화이트+딥로즈) ─────────────
-  static final rose = ThemeData(
-    useMaterial3: true,
-    brightness: Brightness.light,
-    colorScheme: const ColorScheme(
-      brightness: Brightness.light,
-      primary: Color(0xFF9B4157),
-      onPrimary: Colors.white,
-      primaryContainer: Color(0xFFFFD9DE),
-      onPrimaryContainer: Color(0xFF3F0017),
-      secondary: Color(0xFFC8956C),
-      onSecondary: Colors.white,
-      secondaryContainer: Color(0xFFF5E0CE),
-      onSecondaryContainer: Color(0xFF3E2A1A),
-      tertiary: Color(0xFFC8956C),
-      onTertiary: Colors.white,
-      tertiaryContainer: Color(0xFFF5E0CE),
-      onTertiaryContainer: Color(0xFF3E2A1A),
-      error: Color(0xFFBA1A1A),
-      onError: Colors.white,
-      surface: Color(0xFFFFFFFF),
-      onSurface: Color(0xFF1A1A1A),
-      surfaceContainerHighest: Color(0xFFF5EDE8),
-      onSurfaceVariant: Color(0xFF666666),
-      outline: Color(0xFFD5CFC7),
-      outlineVariant: Color(0xFFEDE5DD),
-      shadow: Colors.black,
-      scrim: Colors.black,
-      inverseSurface: Color(0xFF1A1A1A),
-      onInverseSurface: Colors.white,
-      inversePrimary: Color(0xFFFFB1C0),
-    ),
-    fontFamily: _fontFamily,
-    scaffoldBackgroundColor: const Color(0xFFFDF6EE),
-    textTheme: _textTheme,
-    cardTheme: CardThemeData(
-      color: Colors.white,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Color(0xFFEDE5DD)),
-      ),
-      margin: EdgeInsets.zero,
-    ),
-    appBarTheme: AppBarTheme(
-      backgroundColor: const Color(0xFFFDF6EE),
-      foregroundColor: const Color(0xFF1A1A1A),
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      titleTextStyle: const TextStyle(
-        fontFamily: _fontFamily,
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-        color: Color(0xFF1A1A1A),
-      ),
-    ),
-    navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: const Color(0xFFFDF6EE),
-      indicatorColor: const Color(0xFF9B4157).withValues(alpha: 0.12),
-      labelTextStyle: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return const TextStyle(fontFamily: _fontFamily, fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF9B4157));
-        }
-        return const TextStyle(fontFamily: _fontFamily, fontSize: 11, color: Color(0xFF999999));
-      }),
-    ),
-    elevatedButtonTheme: _lightElevatedButtonTheme,
-    inputDecorationTheme: _lightInputDecorationTheme,
-    dividerTheme: _lightDividerTheme,
-  );
-
   /// 프리셋으로 ThemeData 가져오기
   static ThemeData fromPreset(ThemePreset preset) {
     switch (preset) {
@@ -344,10 +217,6 @@ class AppTheme {
         return dark;
       case ThemePreset.light:
         return light;
-      case ThemePreset.cream:
-        return cream;
-      case ThemePreset.rose:
-        return rose;
     }
   }
 
