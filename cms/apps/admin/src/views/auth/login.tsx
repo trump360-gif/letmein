@@ -21,22 +21,27 @@ export function LoginPage() {
   const router = useRouter()
   const setAdmin = useAuthStore((s) => s.setAdmin)
   const [error, setError] = useState<string | null>(null)
-  const [devLoading, setDevLoading] = useState(false)
+  const [devLoading, setDevLoading] = useState<'admin' | 'hospital' | null>(null)
 
-  const handleDevLogin = async () => {
-    setDevLoading(true)
+  const handleDevLogin = async (role: 'admin' | 'hospital') => {
+    setDevLoading(role)
     setError(null)
     try {
-      const res = await fetch('/api/v1/admin/auth/dev-login', { method: 'POST' })
+      const endpoint = role === 'admin'
+        ? '/api/v1/admin/auth/dev-login'
+        : '/api/v1/hospital/auth/dev-login'
+      const res = await fetch(endpoint, { method: 'POST' })
       const data = await res.json()
       if (data.success) {
         setAdmin(data.data.admin)
-        router.replace('/')
+        router.replace(role === 'admin' ? '/' : '/hospital/dashboard')
+      } else {
+        setError(data.error || '빠른 로그인 실패')
       }
     } catch {
       setError('빠른 로그인 실패')
     } finally {
-      setDevLoading(false)
+      setDevLoading(null)
     }
   }
 
@@ -156,15 +161,26 @@ export function LoginPage() {
             </div>
           </div>
 
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={handleDevLogin}
-            disabled={devLoading}
-          >
-            {devLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            ⚡ 빠른 로그인 (Admin)
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => handleDevLogin('admin')}
+              disabled={devLoading !== null}
+            >
+              {devLoading === 'admin' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              ⚡ 관리자 로그인
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => handleDevLogin('hospital')}
+              disabled={devLoading !== null}
+            >
+              {devLoading === 'hospital' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              🏥 병원 로그인
+            </Button>
+          </div>
         </div>
       </div>
     </div>
