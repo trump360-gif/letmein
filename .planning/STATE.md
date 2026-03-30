@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 03-hospital-profile-consult Phase 03-PLAN-2.md
-last_updated: "2026-03-30T08:11:58.145Z"
+stopped_at: 04-hospital-chat-ads plan 1 완료 (HCHAT-01~05)
+last_updated: "2026-03-30T08:12:05.544Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 5
@@ -80,6 +80,8 @@ Recent decisions affecting current work:
 - [Phase 04-hospital-chat-ads]: Prisma direct query for premium status instead of Go proxy — no proxy infrastructure exists in CMS
 - [Phase 03-hospital-profile-consult]: PATCH /[id] with params.id==='order' sentinel handles bulk sortOrder in single dynamic route file
 - [Phase 03-hospital-profile-consult]: dnd-kit optimistic local state (localDoctors) provides instant DnD feedback before server confirms sort order
+- [Phase 04-hospital-chat-ads]: Prisma 직접 조회 사용 — Go 서버 프록시 아님, session.ts에 hospitalJwt 없고 기존 패턴과 일치
+- [Phase 04-hospital-chat-ads]: visit_cards 테이블: $queryRaw 사용 (Prisma 모델 없음)
 
 ### Pending Todos
 
@@ -93,6 +95,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-30T08:11:50.609Z
-Stopped at: Completed 03-hospital-profile-consult Phase 03-PLAN-2.md
+Last session: 2026-03-30T08:12:05.542Z
+Stopped at: 04-hospital-chat-ads plan 1 완료 (HCHAT-01~05)
 Resume file: None
