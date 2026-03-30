@@ -126,6 +126,7 @@ model Hospital {
   premiumTier                String?                      @map("premium_tier") @db.VarChar(20)
   introVideoUrl              String?                      @map("intro_video_url") @db.VarChar(500)
   detailedDescription        String?                      @map("detailed_description")
+  galleryImages              String?                      @map("gallery_images")
   caseCount                  Int?                         @default(0) @map("case_count")
   avgRating                  Decimal?                     @default(0) @map("avg_rating") @db.Decimal(2, 1)
   reviewCount                Int?                         @default(0) @map("review_count")
