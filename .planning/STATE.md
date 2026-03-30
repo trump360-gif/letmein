@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 03-hospital-profile-consult 03-PLAN-3.md
-last_updated: "2026-03-30T08:10:24.188Z"
+stopped_at: Completed 04-hospital-chat-ads Plan 3 (HPREM-01, HPREM-02)
+last_updated: "2026-03-30T08:10:58.052Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 1
-  completed_plans: 4
+  completed_plans: 5
   percent: 20
 ---
 
@@ -54,6 +54,7 @@ Progress: [██░░░░░░░░] 20%
 *Updated after each plan completion*
 | Phase 02-hospital-auth-dashboard P1 | 30m | 3 tasks | 14 files |
 | Phase 03-hospital-profile-consult P3 | 8m | 2 tasks | 7 files |
+| Phase 04-hospital-chat-ads P3 | 8 | 1 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,7 @@ Recent decisions affecting current work:
 - [Phase 02-hospital-auth-dashboard]: reviews 테이블은 Prisma 스키마 없어 $queryRaw 사용
 - [Phase 03-hospital-profile-consult]: 응답 폼 state는 key prop 전달로 선택 변경 시 자동 리셋 (controlled reset without explicit clear logic)
 - [Phase 03-hospital-profile-consult]: consultation_responses upsert — 재발송 허용, unique 제약으로 DB 중복 방지
+- [Phase 04-hospital-chat-ads]: Prisma direct query for premium status instead of Go proxy — no proxy infrastructure exists in CMS
 
 ### Pending Todos
 
@@ -87,6 +89,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-30T08:10:24.186Z
-Stopped at: Completed 03-hospital-profile-consult 03-PLAN-3.md
+Last session: 2026-03-30T08:10:58.049Z
+Stopped at: Completed 04-hospital-chat-ads Plan 3 (HPREM-01, HPREM-02)
 Resume file: None
