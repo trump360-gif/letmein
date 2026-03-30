@@ -23,8 +23,10 @@
   2. CMS 로그인 화면에서 실제 DB 계정으로 로그인하고, 세션이 실제 로그인 유저 ID로 동작한다 (하드코딩 adminId=1 제거됨)
   3. 어드민 CMS에서 병원 상세 페이지를 열면 병원 정보·전문분야·의료진을 조회할 수 있다
   4. 어드민이 특정 병원 사용자에게 프리미엄 구독을 부여하고 티어·만료일을 확인할 수 있다
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 2 plans
+Plans:
+- [ ] 01-PLAN-1.md — DB 기반 인증 + 세션 정상화 + 채팅방 자동 생성 (CMS-01, CMS-02, CMS-03)
+- [ ] 01-PLAN-2.md — 병원 상세 페이지 + 프리미엄 구독 부여 (CMS-04, CMS-05)
 
 ### Phase 2: 병원 인증 + 대시보드
 **Goal**: 병원 사용자가 /hospital-login으로 로그인하면 병원 전용 사이드바와 대시보드를 볼 수 있고, 어드민 라우트에는 접근이 차단된다
@@ -78,7 +80,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. CMS Critical 수정 | 0/TBD | Not started | - |
+| 1. CMS Critical 수정 | 0/2 | Not started | - |
 | 2. 병원 인증 + 대시보드 | 0/TBD | Not started | - |
 | 3. 병원 프로필 + 의료진 + 상담 | 0/TBD | Not started | - |
 | 4. 병원 채팅 + 광고 + 프리미엄 | 0/TBD | Not started | - |
