@@ -13,6 +13,7 @@ import '../../cast_member/data/cast_member_models.dart';
 import '../../../shared/widgets/youtube_hero.dart';
 import '../../../shared/widgets/cached_image.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../main.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -39,6 +40,7 @@ class HomeScreen extends ConsumerWidget {
           ),
         ),
         actions: [
+          _ThemeSwitchButton(),
           IconButton(
             icon: Icon(
               LucideIcons.bell,
@@ -1200,6 +1202,139 @@ class _PostsLoadingPlaceholder extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ──────────────────────────────────────────────
+// 테마 전환 버튼
+// ──────────────────────────────────────────────
+
+class _ThemeSwitchButton extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = ref.watch(themePresetProvider);
+
+    return IconButton(
+      icon: Icon(
+        LucideIcons.sun,
+        size: 20,
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+      ),
+      tooltip: '테마 변경',
+      onPressed: () {
+        showModalBottomSheet(
+          context: context,
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          builder: (_) => _ThemePickerSheet(current: current, ref: ref),
+        );
+      },
+    );
+  }
+}
+
+class _ThemePickerSheet extends StatelessWidget {
+  const _ThemePickerSheet({required this.current, required this.ref});
+
+  final ThemePreset current;
+  final WidgetRef ref;
+
+  @override
+  Widget build(BuildContext context) {
+    final presets = [
+      (ThemePreset.dark, '다크', Color(0xFF0D0D0D), Color(0xFFC0392B)),
+      (ThemePreset.light, '라이트', Color(0xFFFAF8F5), Color(0xFFC0392B)),
+      (ThemePreset.cream, '크림+버건디', Color(0xFFFAF8F5), Color(0xFFC0392B)),
+      (ThemePreset.rose, '로즈', Color(0xFFFDF6EE), Color(0xFF9B4157)),
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            '테마 선택',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: presets.map((p) {
+              final (preset, label, bgColor, accentColor) = p;
+              final isSelected = current == preset;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    ref.read(themePresetProvider.notifier).set(preset);
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: isSelected ? accentColor : Theme.of(context).colorScheme.outline,
+                        width: isSelected ? 2 : 1,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: bgColor,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Theme.of(context).colorScheme.outline),
+                          ),
+                          child: Center(
+                            child: Container(
+                              width: 16,
+                              height: 16,
+                              decoration: BoxDecoration(
+                                color: accentColor,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                            color: isSelected
+                                ? accentColor
+                                : Theme.of(context).colorScheme.onSurface,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }
