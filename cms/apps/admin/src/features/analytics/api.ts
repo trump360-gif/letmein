@@ -4,9 +4,7 @@ import type {
   UserStatsResponse,
   PostStatsResponse,
   ReportStatsResponse,
-  BannerStatsResponse,
   NotificationStatsResponse,
-  FunnelResponse,
   ExportResponse,
   StatsRequestParams,
   ExportTarget,
@@ -47,26 +45,12 @@ export async function fetchReportStats(params?: StatsRequestParams): Promise<Rep
   return res.data
 }
 
-export async function fetchBannerStats(params?: StatsRequestParams): Promise<BannerStatsResponse> {
-  const res = await api
-    .get('admin/stats/banners', { searchParams: buildSearchParams(params) })
-    .json<{ success: boolean; data: BannerStatsResponse }>()
-  return res.data
-}
-
 export async function fetchNotificationStats(
   params?: StatsRequestParams,
 ): Promise<NotificationStatsResponse> {
   const res = await api
     .get('admin/stats/notifications', { searchParams: buildSearchParams(params) })
     .json<{ success: boolean; data: NotificationStatsResponse }>()
-  return res.data
-}
-
-export async function fetchFunnelStats(params?: StatsRequestParams): Promise<FunnelResponse> {
-  const res = await api
-    .get('admin/stats/funnel', { searchParams: buildSearchParams(params) })
-    .json<{ success: boolean; data: FunnelResponse }>()
   return res.data
 }
 

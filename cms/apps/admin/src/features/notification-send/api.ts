@@ -6,8 +6,6 @@ import type {
   NotificationLog,
   NotificationStats,
   SendNotificationPayload,
-  WebhookConfig,
-  WebhookConfigPayload,
 } from '@letmein/types'
 import type { ApiResponse, PaginationMeta } from '@letmein/types'
 
@@ -91,30 +89,4 @@ export async function fetchNotificationStats(days?: number) {
     .get(`admin/notifications/stats${searchParams}`)
     .json<ApiResponse<NotificationStats>>()
   return res.data
-}
-
-// --- Webhooks ---
-
-export async function fetchWebhooks() {
-  const res = await api.get('admin/webhooks').json<ApiResponse<{ webhooks: WebhookConfig[] }>>()
-  return res.data.webhooks
-}
-
-export async function createWebhook(payload: WebhookConfigPayload) {
-  const res = await api
-    .post('admin/webhooks', { json: payload })
-    .json<ApiResponse<{ webhook: WebhookConfig }>>()
-  return res.data.webhook
-}
-
-export async function updateWebhook(id: string, payload: Partial<WebhookConfigPayload>) {
-  const res = await api
-    .patch(`admin/webhooks/${id}`, { json: payload })
-    .json<ApiResponse<{ webhook: WebhookConfig }>>()
-  return res.data.webhook
-}
-
-export async function deleteWebhook(id: string) {
-  const res = await api.delete(`admin/webhooks/${id}`).json<ApiResponse<{ message: string }>>()
-  return res.data.message
 }

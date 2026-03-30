@@ -6,8 +6,6 @@ import type {
   GradeChangePayload,
   PointActionPayload,
   SuspendPayload,
-  UserGradeConfig,
-  PointRuleItem,
 } from '@letmein/types'
 import type { ApiResponse } from '@letmein/types'
 
@@ -48,28 +46,10 @@ export async function changeUserGrade(id: number, data: GradeChangePayload) {
   return api.patch(`admin/users/${id}/grade`, { json: data }).json<ApiResponse<{ message: string }>>()
 }
 
-export async function fetchGrades(): Promise<UserGradeConfig[]> {
-  const res = await api.get('admin/grades').json<ApiResponse<UserGradeConfig[]>>()
-  return res.data
-}
-
-export async function updateGrade(grade: number, data: Partial<UserGradeConfig>) {
-  return api.patch(`admin/grades/${grade}`, { json: data }).json<ApiResponse<UserGradeConfig>>()
-}
-
 // ==================== Points ====================
 
 export async function processPoints(id: number, data: PointActionPayload) {
   return api.post(`admin/users/${id}/points`, { json: data }).json<ApiResponse<{ message: string; balance: number }>>()
-}
-
-export async function fetchPointRules(): Promise<PointRuleItem[]> {
-  const res = await api.get('admin/point-rules').json<ApiResponse<PointRuleItem[]>>()
-  return res.data
-}
-
-export async function updatePointRule(type: string, data: Partial<PointRuleItem>) {
-  return api.patch('admin/point-rules', { json: { type, ...data } }).json<ApiResponse<PointRuleItem>>()
 }
 
 // ==================== Suspend ====================

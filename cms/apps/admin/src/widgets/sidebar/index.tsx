@@ -8,8 +8,6 @@ import {
   Users,
   Megaphone,
   SlidersHorizontal,
-  Menu,
-  Globe,
   LogOut,
   HeartHandshake,
   Building2,
@@ -45,7 +43,6 @@ const navigation: NavItem[] = [
   { name: '광고 심사', href: '/ads', icon: BadgeCheck, section: 'LetMeIn' },
 
   // 공통 섹션
-  { name: '메뉴 관리', href: '/operations/menus', icon: Menu, section: '공통' },
   { name: '사용자 관리', href: '/members', icon: Users, section: '공통' },
   { name: '운영', href: '/operations', icon: Megaphone, section: '공통' },
   { name: '분석/설정', href: '/config', icon: SlidersHorizontal, section: '공통' },
@@ -81,11 +78,7 @@ export function Sidebar() {
           if (item.section) lastSection = item.section
 
           const isActive =
-            item.href === '/'
-              ? pathname === '/'
-              : item.href === '/operations'
-                ? pathname.startsWith('/operations') && !pathname.startsWith('/operations/menus')
-                : pathname.startsWith(item.href)
+            item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
 
           return (
             <div key={item.href}>

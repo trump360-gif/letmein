@@ -1,28 +1,28 @@
 'use client'
 
 import Link from 'next/link'
-import { Plus, Image, Bell, ShieldBan } from 'lucide-react'
+import { Bell, ShieldBan, Building2, Star } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent, Button } from '@letmein/ui'
 
 const actions = [
   {
-    label: '새 게시판',
-    href: '/boards?action=create',
-    icon: Plus,
+    label: '병원 승인',
+    href: '/hospitals',
+    icon: Building2,
   },
   {
-    label: '배너 등록',
-    href: '/banners?action=create',
-    icon: Image,
+    label: '출연자 관리',
+    href: '/cast-members',
+    icon: Star,
   },
   {
     label: '공지 발송',
-    href: '/notifications?action=create',
+    href: '/operations/notifications?action=create',
     icon: Bell,
   },
   {
     label: '금칙어 관리',
-    href: '/settings?tab=banned-words',
+    href: '/members/banned-words',
     icon: ShieldBan,
   },
 ]

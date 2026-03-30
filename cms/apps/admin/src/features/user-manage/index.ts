@@ -7,17 +7,11 @@ export {
   processPoints,
   suspendUser,
   unsuspendUser,
-  fetchGrades,
-  updateGrade,
-  fetchPointRules,
-  updatePointRule,
   forceLogout,
 } from './api'
 
 export {
   userKeys,
-  gradeKeys,
-  pointRuleKeys,
   useUsers,
   useUserDetail,
   useUpdateUser,
@@ -26,8 +20,4 @@ export {
   useProcessPoints,
   useSuspendUser,
   useUnsuspendUser,
-  useGrades,
-  useUpdateGrade,
-  usePointRules,
-  useUpdatePointRule,
 } from './queries'

@@ -6,14 +6,12 @@ import {
   Mail,
   ListOrdered,
   History,
-  Webhook,
   BarChart3,
 } from 'lucide-react'
 import { SendNotification } from './components/send-notification'
 import { EmailTemplates } from './components/email-templates'
 import { NotificationQueue } from './components/notification-queue'
 import { NotificationLogs } from './components/notification-logs'
-import { WebhookSettings } from './components/webhook-settings'
 import { NotificationStats } from './components/notification-stats'
 
 export function NotificationsPage() {
@@ -36,10 +34,6 @@ export function NotificationsPage() {
           <TabsTrigger value="logs" className="gap-1.5">
             <History className="h-4 w-4" />
             발송 이력
-          </TabsTrigger>
-          <TabsTrigger value="webhooks" className="gap-1.5">
-            <Webhook className="h-4 w-4" />
-            웹훅
           </TabsTrigger>
           <TabsTrigger value="stats" className="gap-1.5">
             <BarChart3 className="h-4 w-4" />
@@ -68,12 +62,6 @@ export function NotificationsPage() {
         <TabsContent value="logs">
           <div className="rounded-lg border bg-card p-6">
             <NotificationLogs />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="webhooks">
-          <div className="rounded-lg border bg-card p-6">
-            <WebhookSettings />
           </div>
         </TabsContent>
 

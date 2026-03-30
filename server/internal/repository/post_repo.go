@@ -16,7 +16,7 @@ type PostListParams struct {
 	CategoryID *int
 	HospitalID *int64
 	SortBy     string // "latest" | "likes" | "comments"
-	Page       int
+	Cursor     int64  // cursor-based: fetch posts with id < Cursor (0 = first page)
 	Limit      int
 }
 
@@ -24,7 +24,7 @@ type PostListParams struct {
 type PostRepository interface {
 	Create(post *model.Post, imageIDs []int64) (*model.Post, error)
 	GetByID(id int64) (*model.PostDetail, error)
-	List(params PostListParams) ([]*model.PostListItem, int, error)
+	List(params PostListParams) ([]*model.PostListItem, int64, error)
 	Delete(id int64) error
 
 	CreateComment(comment *model.Comment) (*model.Comment, error)
@@ -163,10 +163,12 @@ func (r *postRepository) getImageURLs(postID int64) ([]string, error) {
 	return urls, nil
 }
 
-func (r *postRepository) List(params PostListParams) ([]*model.PostListItem, int, error) {
-	if params.Page < 1 {
-		params.Page = 1
-	}
+// List returns a page of posts using cursor-based pagination.
+//
+// cursor=0  → first page (no id filter)
+// cursor=N  → fetch posts with id < N (for "latest" sort)
+// Returns (items, nextCursor, error). nextCursor==0 means no more pages.
+func (r *postRepository) List(params PostListParams) ([]*model.PostListItem, int64, error) {
 	if params.Limit < 1 || params.Limit > 100 {
 		params.Limit = 20
 	}
@@ -193,24 +195,25 @@ func (r *postRepository) List(params PostListParams) ([]*model.PostListItem, int
 		argIdx++
 	}
 
+	// Cursor is only applied for the default "latest" (id DESC) sort to ensure
+	// correctness. For likes/comments sorts, cursor falls back to first-page
+	// behaviour since the ordering key differs from the cursor key.
+	if params.Cursor > 0 && (params.SortBy == "" || params.SortBy == "latest") {
+		conditions = append(conditions, fmt.Sprintf("p.id < $%d", argIdx))
+		args = append(args, params.Cursor)
+		argIdx++
+	}
+
 	where := strings.Join(conditions, " AND ")
 
-	// Count.
-	countQ := fmt.Sprintf(`SELECT COUNT(*) FROM posts p WHERE %s`, where)
-	var total int
-	if err := r.db.QueryRow(countQ, args...).Scan(&total); err != nil {
-		return nil, 0, fmt.Errorf("count posts: %w", err)
-	}
-
-	orderBy := "p.created_at DESC"
+	orderBy := "p.id DESC"
 	switch params.SortBy {
 	case "likes":
-		orderBy = "p.like_count DESC, p.created_at DESC"
+		orderBy = "p.like_count DESC, p.id DESC"
 	case "comments":
-		orderBy = "p.comment_count DESC, p.created_at DESC"
+		orderBy = "p.comment_count DESC, p.id DESC"
 	}
 
-	offset := (params.Page - 1) * params.Limit
 	dataQ := fmt.Sprintf(`
 		SELECT
 			p.id, p.board_type, p.category_id, pc.name,
@@ -224,9 +227,9 @@ func (r *postRepository) List(params PostListParams) ([]*model.PostListItem, int
 		LEFT JOIN hospitals h ON h.id = p.hospital_id
 		WHERE %s
 		ORDER BY %s
-		LIMIT $%d OFFSET $%d`, where, orderBy, argIdx, argIdx+1)
+		LIMIT $%d`, where, orderBy, argIdx)
 
-	args = append(args, params.Limit, offset)
+	args = append(args, params.Limit)
 
 	rows, err := r.db.Query(dataQ, args...)
 	if err != nil {
@@ -254,7 +257,7 @@ func (r *postRepository) List(params PostListParams) ([]*model.PostListItem, int
 	}
 
 	if len(items) == 0 {
-		return []*model.PostListItem{}, total, nil
+		return []*model.PostListItem{}, 0, nil
 	}
 
 	// Batch-fetch first image per post to avoid N+1.
@@ -296,7 +299,13 @@ func (r *postRepository) List(params PostListParams) ([]*model.PostListItem, int
 		return nil, 0, err
 	}
 
-	return items, total, nil
+	// next_cursor is the ID of the last item; 0 if this is the last page.
+	var nextCursor int64
+	if len(items) == params.Limit {
+		nextCursor = items[len(items)-1].ID
+	}
+
+	return items, nextCursor, nil
 }
 
 func (r *postRepository) Delete(id int64) error {

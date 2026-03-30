@@ -6,24 +6,18 @@ import {
   Settings,
   Search,
   Shield,
-  Globe,
-  FileText,
   Monitor,
 } from 'lucide-react'
 import { BasicInfoTab } from './components/basic-info-tab'
 import { SeoTab } from './components/seo-tab'
-import { TermsTab } from './components/terms-tab'
 import { SecurityTab } from './components/security-tab'
 import { EnvironmentTab } from './components/environment-tab'
-import { TranslationsTab } from './components/translations-tab'
 
 const tabs = [
   { id: 'basic', label: '기본 정보', icon: Settings },
   { id: 'seo', label: 'SEO / AO / GEO', icon: Search },
-  { id: 'terms', label: '약관 관리', icon: FileText },
   { id: 'security', label: '보안 설정', icon: Shield },
   { id: 'environment', label: '환경 설정', icon: Monitor },
-  { id: 'translations', label: '다국어 관리', icon: Globe },
 ] as const
 
 type TabId = (typeof tabs)[number]['id']
@@ -62,10 +56,8 @@ export function SettingsPage() {
         <div className="min-w-0 flex-1">
           {activeTab === 'basic' && <BasicInfoTab />}
           {activeTab === 'seo' && <SeoTab />}
-          {activeTab === 'terms' && <TermsTab />}
           {activeTab === 'security' && <SecurityTab />}
           {activeTab === 'environment' && <EnvironmentTab />}
-          {activeTab === 'translations' && <TranslationsTab />}
         </div>
       </div>
     </div>

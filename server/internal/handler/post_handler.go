@@ -72,13 +72,27 @@ func (h *PostHandler) CreatePost(c *gin.Context) {
 
 // ──────────────────────────────────────────────
 // GET /api/v1/posts
+// Query params:
+//   cursor=<id>   — return posts with id < cursor (omit or 0 for first page)
+//   limit=20      — max items per page (1–100)
+//   board_type, sort, category_id, hospital_id — existing filters unchanged
+//   page=1        — legacy param: treated as first page (other values ignored)
 // ──────────────────────────────────────────────
 
 func (h *PostHandler) ListPosts(c *gin.Context) {
 	boardType := c.DefaultQuery("board_type", "before_after")
 	sortBy := c.DefaultQuery("sort", "latest")
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+
+	limit := 20
+	if v, err := strconv.Atoi(c.Query("limit")); err == nil && v > 0 && v <= 100 {
+		limit = v
+	}
+
+	// cursor param: 0 means first page.
+	var cursor int64
+	if v, err := strconv.ParseInt(c.Query("cursor"), 10, 64); err == nil && v > 0 {
+		cursor = v
+	}
 
 	var categoryID *int
 	if v := c.Query("category_id"); v != "" {
@@ -105,11 +119,11 @@ func (h *PostHandler) ListPosts(c *gin.Context) {
 		CategoryID: categoryID,
 		HospitalID: hospitalID,
 		SortBy:     sortBy,
-		Page:       page,
+		Cursor:     cursor,
 		Limit:      limit,
 	}
 
-	items, total, err := h.postSvc.ListPosts(params)
+	items, nextCursor, err := h.postSvc.ListPosts(params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list posts"})
 		return
@@ -118,9 +132,8 @@ func (h *PostHandler) ListPosts(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": items,
 		"meta": gin.H{
-			"total": total,
-			"page":  page,
-			"limit": limit,
+			"next_cursor": nextCursor,
+			"limit":       limit,
 		},
 	})
 }

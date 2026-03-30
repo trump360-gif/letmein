@@ -7,15 +7,10 @@ import {
   fetchNotificationQueue,
   fetchNotificationLogs,
   fetchNotificationStats,
-  fetchWebhooks,
-  createWebhook,
-  updateWebhook,
-  deleteWebhook,
 } from './api'
 import type {
   EmailTemplateUpdatePayload,
   SendNotificationPayload,
-  WebhookConfigPayload,
 } from '@letmein/types'
 
 // --- Query Keys ---
@@ -25,7 +20,6 @@ export const notificationKeys = {
   queue: (params: Record<string, unknown>) => [...notificationKeys.all, 'queue', params] as const,
   logs: (params: Record<string, unknown>) => [...notificationKeys.all, 'logs', params] as const,
   stats: (days?: number) => [...notificationKeys.all, 'stats', days] as const,
-  webhooks: () => [...notificationKeys.all, 'webhooks'] as const,
 }
 
 // --- Email Templates ---
@@ -74,7 +68,7 @@ export function useNotificationQueue(params: {
   return useQuery({
     queryKey: notificationKeys.queue(params),
     queryFn: () => fetchNotificationQueue(params),
-    refetchInterval: 30000, // 30초 폴링
+    refetchInterval: 30000,
   })
 }
 
@@ -97,44 +91,5 @@ export function useNotificationStats(days?: number) {
   return useQuery({
     queryKey: notificationKeys.stats(days),
     queryFn: () => fetchNotificationStats(days),
-  })
-}
-
-// --- Webhooks ---
-export function useWebhooks() {
-  return useQuery({
-    queryKey: notificationKeys.webhooks(),
-    queryFn: fetchWebhooks,
-  })
-}
-
-export function useCreateWebhook() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (payload: WebhookConfigPayload) => createWebhook(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notificationKeys.webhooks() })
-    },
-  })
-}
-
-export function useUpdateWebhook() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: Partial<WebhookConfigPayload> }) =>
-      updateWebhook(id, payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notificationKeys.webhooks() })
-    },
-  })
-}
-
-export function useDeleteWebhook() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (id: string) => deleteWebhook(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notificationKeys.webhooks() })
-    },
   })
 }

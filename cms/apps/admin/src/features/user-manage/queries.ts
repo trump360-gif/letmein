@@ -9,10 +9,6 @@ import {
   processPoints,
   suspendUser,
   unsuspendUser,
-  fetchGrades,
-  updateGrade,
-  fetchPointRules,
-  updatePointRule,
 } from './api'
 
 // ==================== Query Keys ====================
@@ -23,16 +19,6 @@ export const userKeys = {
   list: (params: UserListParams) => [...userKeys.lists(), params] as const,
   details: () => [...userKeys.all, 'detail'] as const,
   detail: (id: number) => [...userKeys.details(), id] as const,
-}
-
-export const gradeKeys = {
-  all: ['grades'] as const,
-  list: () => [...gradeKeys.all, 'list'] as const,
-}
-
-export const pointRuleKeys = {
-  all: ['point-rules'] as const,
-  list: () => [...pointRuleKeys.all, 'list'] as const,
 }
 
 // ==================== User Queries ====================
@@ -120,46 +106,6 @@ export function useUnsuspendUser() {
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: userKeys.detail(id) })
       queryClient.invalidateQueries({ queryKey: userKeys.lists() })
-    },
-  })
-}
-
-// ==================== Grade Queries ====================
-
-export function useGrades() {
-  return useQuery({
-    queryKey: gradeKeys.list(),
-    queryFn: fetchGrades,
-  })
-}
-
-export function useUpdateGrade() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: ({ grade, data }: { grade: number; data: Parameters<typeof updateGrade>[1] }) =>
-      updateGrade(grade, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: gradeKeys.all })
-    },
-  })
-}
-
-// ==================== Point Rule Queries ====================
-
-export function usePointRules() {
-  return useQuery({
-    queryKey: pointRuleKeys.list(),
-    queryFn: fetchPointRules,
-  })
-}
-
-export function useUpdatePointRule() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: ({ type, data }: { type: string; data: Parameters<typeof updatePointRule>[1] }) =>
-      updatePointRule(type, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: pointRuleKeys.all })
     },
   })
 }

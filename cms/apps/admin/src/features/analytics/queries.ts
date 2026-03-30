@@ -4,9 +4,7 @@ import {
   fetchUserStats,
   fetchPostStats,
   fetchReportStats,
-  fetchBannerStats,
   fetchNotificationStats,
-  fetchFunnelStats,
 } from './api'
 import type { StatsRequestParams } from '@letmein/types'
 
@@ -16,10 +14,8 @@ export const statsKeys = {
   users: (params?: StatsRequestParams) => [...statsKeys.all, 'users', params] as const,
   posts: (params?: StatsRequestParams) => [...statsKeys.all, 'posts', params] as const,
   reports: (params?: StatsRequestParams) => [...statsKeys.all, 'reports', params] as const,
-  banners: (params?: StatsRequestParams) => [...statsKeys.all, 'banners', params] as const,
   notifications: (params?: StatsRequestParams) =>
     [...statsKeys.all, 'notifications', params] as const,
-  funnel: (params?: StatsRequestParams) => [...statsKeys.all, 'funnel', params] as const,
 }
 
 export function useStatsSummary() {
@@ -55,26 +51,10 @@ export function useReportStats(params?: StatsRequestParams) {
   })
 }
 
-export function useBannerStats(params?: StatsRequestParams) {
-  return useQuery({
-    queryKey: statsKeys.banners(params),
-    queryFn: () => fetchBannerStats(params),
-    staleTime: 60 * 1000,
-  })
-}
-
 export function useNotificationStats(params?: StatsRequestParams) {
   return useQuery({
     queryKey: statsKeys.notifications(params),
     queryFn: () => fetchNotificationStats(params),
-    staleTime: 60 * 1000,
-  })
-}
-
-export function useFunnelStats(params?: StatsRequestParams) {
-  return useQuery({
-    queryKey: statsKeys.funnel(params),
-    queryFn: () => fetchFunnelStats(params),
     staleTime: 60 * 1000,
   })
 }

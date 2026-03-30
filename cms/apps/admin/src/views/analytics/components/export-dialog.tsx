@@ -23,9 +23,7 @@ const EXPORT_TARGETS: { value: ExportTarget; label: string }[] = [
   { value: 'users', label: '회원 통계' },
   { value: 'posts', label: '게시물 통계' },
   { value: 'reports', label: '신고 통계' },
-  { value: 'banners', label: '배너 통계' },
   { value: 'notifications', label: '알림 통계' },
-  { value: 'funnel', label: '퍼널 분석' },
 ]
 
 export function ExportDialog({ params }: ExportDialogProps) {

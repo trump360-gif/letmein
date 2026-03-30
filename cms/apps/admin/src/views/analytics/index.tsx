@@ -8,12 +8,10 @@ import { StatsCard } from '@/widgets/stats-card'
 import { UsersStats } from './components/users-stats'
 import { PostsStats } from './components/posts-stats'
 import { ReportsStats } from './components/reports-stats'
-import { BannerStats } from './components/banner-stats'
 import { NotificationStats } from './components/notification-stats'
-import { FunnelAnalysis } from './components/funnel-analysis'
 import { ExportDialog } from './components/export-dialog'
 import type { StatsPeriod, StatsRequestParams } from '@letmein/types'
-import { Users, FileText, Flag, Bell } from 'lucide-react'
+import { Users, FileText, Flag } from 'lucide-react'
 
 function calcChange(today: number, yesterday: number): number {
   if (yesterday === 0) return 0
@@ -135,9 +133,7 @@ export function AnalyticsPage() {
           <TabsTrigger value="users">회원</TabsTrigger>
           <TabsTrigger value="posts">게시물</TabsTrigger>
           <TabsTrigger value="reports">신고/제재</TabsTrigger>
-          <TabsTrigger value="banners">배너</TabsTrigger>
           <TabsTrigger value="notifications">알림</TabsTrigger>
-          <TabsTrigger value="funnel">퍼널</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users">
@@ -149,14 +145,8 @@ export function AnalyticsPage() {
         <TabsContent value="reports">
           <ReportsStats params={params} />
         </TabsContent>
-        <TabsContent value="banners">
-          <BannerStats params={params} />
-        </TabsContent>
         <TabsContent value="notifications">
           <NotificationStats params={params} />
-        </TabsContent>
-        <TabsContent value="funnel">
-          <FunnelAnalysis params={params} />
         </TabsContent>
       </Tabs>
 
