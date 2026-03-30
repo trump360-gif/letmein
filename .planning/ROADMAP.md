@@ -38,8 +38,9 @@ Plans:
   3. 병원 계정이 어드민 전용 라우트(/admin/*)에 접근하면 자동으로 차단된다
   4. 병원 대시보드에서 신규 매칭 수, 활성 채팅 수, 평균 응답률, 평점 4개 통계를 한눈에 확인할 수 있다
   5. 대시보드에서 최근 상담 요청 3건과 최근 리뷰 3건 미리보기를 확인할 수 있다
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 1 plan
+Plans:
+- [ ] 02-01-PLAN.md — 병원 로그인 + 역할 분기 미들웨어 + 병원 사이드바 + 대시보드 (HAUTH-01~03, HDASH-01~03)
 
 ### Phase 3: 병원 프로필 + 의료진 + 상담
 **Goal**: 병원 사용자가 CMS에서 병원 프로필을 직접 편집하고, 의료진을 관리하고, 매칭된 상담 요청에 응답을 작성할 수 있다
@@ -81,7 +82,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. CMS Critical 수정 | 0/2 | Not started | - |
-| 2. 병원 인증 + 대시보드 | 0/TBD | Not started | - |
+| 2. 병원 인증 + 대시보드 | 0/1 | Not started | - |
 | 3. 병원 프로필 + 의료진 + 상담 | 0/TBD | Not started | - |
 | 4. 병원 채팅 + 광고 + 프리미엄 | 0/TBD | Not started | - |
 | 5. PRD 리팩토링 | 0/TBD | Not started | - |
