@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-03-30)
 ## Current Position
 
 Phase: 1 of 5 (CMS Critical 수정)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-03-30 — Roadmap created, ready to begin Phase 1 planning
+Plan: 1 of 2 completed in current phase (Plan 1 done)
+Status: In Progress
+Last activity: 2026-03-30 — Plan 1 executed (CMS-01, CMS-02, CMS-03)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 20%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: -
-- Total execution time: 0 hours
+- Total plans completed: 2 (Plan 1 + Plan 2 from previous session)
+- Average duration: ~15 minutes/plan
+- Total execution time: ~0.5 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01-cms-critical | 2 | ~30m | ~15m |
 
 **Recent Trend:**
-- Last 5 plans: -
-- Trend: -
+- Last 5 plans: Plan 1 (15m), Plan 2 (15m)
+- Trend: On schedule
 
 *Updated after each plan completion*
 
@@ -46,17 +46,22 @@ Recent decisions affecting current work:
 - [Init]: Go 서버 API 재사용 — 24개 hospital API 이미 존재, CMS에서 fetch 호출
 - [Init]: 채팅은 polling으로 구현 (Centrifugo CMS 연동은 v2)
 - [Init]: 드롭다운 전면 금지 — 탭/칩/드래그앤드롭만 허용
+- [Plan 1]: AdminCredential 모델을 기존 AdminUser와 분리 (독립 email/password 인증용)
+- [Plan 1]: prisma db push 불가 시 직접 SQL CREATE TABLE 사용 후 prisma generate
+- [Plan 1]: Route Handler BigInt(1) fallback 유지, Server Action은 throw 처리
 
 ### Pending Todos
 
-None yet.
+- Sanction 모델 스키마-코드 불일치 수정 (appliedBy, liftedBy, type 필드 추가 필요)
+- Report 모델 processedBy, processedAt 필드 추가 필요
+- User 모델 suspendedUntil, suspensionReason 필드 추가 필요
 
 ### Blockers/Concerns
 
-None yet.
+- 기존 DB 스키마와 Prisma 스키마 간 불일치로 `prisma db push` 사용 불가 — 마이그레이션 전략 필요
 
 ## Session Continuity
 
 Last session: 2026-03-30
-Stopped at: Roadmap created, STATE.md initialized
+Stopped at: Plan 1 complete (CMS-01, CMS-02, CMS-03)
 Resume file: None
