@@ -59,6 +59,18 @@ export interface HospitalDoctor {
   createdAt: string
 }
 
+export interface HospitalSpecialty {
+  id: number
+  hospitalId: number
+  categoryId: number | null
+  categoryName: string | null
+}
+
+export interface HospitalDetail extends Hospital {
+  specialties: HospitalSpecialty[]
+  doctors: HospitalDoctor[]
+}
+
 // ── 시술 카테고리 ──
 
 export interface ProcedureCategory {

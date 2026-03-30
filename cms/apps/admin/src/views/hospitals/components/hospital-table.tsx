@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useTransition } from 'react'
 import { cn } from '@letmein/utils'
 import type { Hospital } from '@letmein/types'
@@ -89,7 +90,15 @@ export function HospitalTable({
             {hospitals.map((h) => (
               <tr key={h.id} className="hover:bg-muted/30" data-testid={`hospital-row-${h.id}`}>
                 <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{h.id}</td>
-                <td className="px-4 py-3 text-sm font-medium">{h.name}</td>
+                <td className="px-4 py-3 text-sm font-medium">
+                  <Link
+                    href={`/hospitals/${h.id}`}
+                    className="hover:underline"
+                    data-testid={`hospital-detail-link-${h.id}`}
+                  >
+                    {h.name}
+                  </Link>
+                </td>
                 <td className="px-4 py-3 text-sm text-muted-foreground">{h.address ?? '-'}</td>
                 <td className="px-4 py-3">
                   <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', STATUS_COLORS[h.status] ?? 'bg-gray-100')}>
