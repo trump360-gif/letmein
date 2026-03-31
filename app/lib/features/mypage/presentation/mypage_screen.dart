@@ -7,6 +7,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/presentation/auth_provider.dart';
+import '../../cast_member/presentation/cast_member_status_provider.dart';
 
 class MyPageScreen extends ConsumerWidget {
   const MyPageScreen({super.key});
@@ -15,7 +16,7 @@ class MyPageScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authStateProvider);
     final user = authState.user;
-    final isCastMember = authState.userExtra.isCastMember;
+    final isCastMember = ref.watch(isCastMemberProvider);
     final isWithdrawing = authState.isWithdrawing;
 
     return Scaffold(
@@ -111,6 +112,30 @@ class MyPageScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.sectionGap),
           Divider(height: 1, thickness: 1, color: Theme.of(context).dividerColor),
           const SizedBox(height: AppSpacing.sectionGap),
+
+          // ── 출연자 전용 메뉴 (출연자만 표시) ─────────
+          if (isCastMember) ...[
+            _MenuGroupLabel(label: '출연자'),
+            _MenuTile(
+              testKey: const Key('menu_cast_my_stories'),
+              icon: LucideIcons.bookOpen,
+              iconColor: const Color(0xFFC62828),
+              iconBgColor: const Color(0xFFC62828).withValues(alpha: 0.15),
+              title: '내 스토리 관리',
+              onTap: () => context.push(AppRoutes.castStories),
+            ),
+            _MenuTile(
+              testKey: const Key('menu_cast_story_create'),
+              icon: LucideIcons.edit3,
+              iconColor: const Color(0xFFC62828),
+              iconBgColor: const Color(0xFFC62828).withValues(alpha: 0.15),
+              title: '스토리 작성',
+              onTap: () => context.push(AppRoutes.castStoryCreate),
+            ),
+            const SizedBox(height: AppSpacing.sectionGap),
+            Divider(height: 1, thickness: 1, color: Theme.of(context).dividerColor),
+            const SizedBox(height: AppSpacing.sectionGap),
+          ],
 
           // ── Menu Group 3: 계정 ────────────────────
           _MenuGroupLabel(label: '계정'),

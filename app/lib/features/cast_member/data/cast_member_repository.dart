@@ -127,6 +127,38 @@ class CastMemberRepository {
     });
   }
 
+  // ── Cast Story Create ────────────────────────
+
+  /// POST /api/v1/cast-stories
+  Future<void> createStory({
+    required String content,
+    required String storyType,
+    List<int>? imageIds,
+    String? youtubeUrl,
+  }) async {
+    await _dio.post<void>('/cast-stories', data: {
+      'content': content,
+      'story_type': storyType,
+      if (imageIds != null) 'image_ids': imageIds,
+      if (youtubeUrl != null) 'youtube_url': youtubeUrl,
+    });
+  }
+
+  // ── Verification Status ──────────────────────
+
+  /// GET /api/v1/cast-members/me — 현재 유저의 출연자 정보 조회
+  /// 서버가 404를 반환하면 null 반환 (출연자 아님)
+  Future<CastMember?> getMyCastMemberProfile() async {
+    try {
+      final response =
+          await _dio.get<Map<String, dynamic>>('/cast-members/me');
+      return CastMember.fromJson(
+          response.data!['data'] as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
+
   // ── Episodes ─────────────────────────────────
 
   /// GET /api/v1/episodes/hero

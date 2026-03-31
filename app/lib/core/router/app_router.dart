@@ -26,6 +26,7 @@ import '../../features/mypage/presentation/notification_settings_screen.dart';
 import '../../features/referral/presentation/referral_screen.dart';
 import '../../features/cast_member/presentation/cast_member_profile_screen.dart';
 import '../../features/cast_member/presentation/cast_story_feed_screen.dart';
+import '../../features/cast_member/presentation/cast_story_create_screen.dart';
 import '../../features/cast_member/presentation/cast_apply_screen.dart';
 import '../../features/review/presentation/review_list_screen.dart';
 import '../../features/review/presentation/review_write_screen.dart';
@@ -59,6 +60,7 @@ class AppRoutes {
   static const castMembers = '/cast-members';
   static const castMemberProfile = '/cast-members/:id';
   static const castStories = '/cast-stories';
+  static const castStoryCreate = '/cast-stories/create';
   static const reviewWrite = '/review/write';
 }
 
@@ -182,6 +184,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.castStories,
         builder: (context, state) => const CastStoryFeedScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.castStoryCreate,
+        builder: (context, state) => const CastStoryCreateScreen(),
       ),
       GoRoute(
         path: AppRoutes.castApply,
