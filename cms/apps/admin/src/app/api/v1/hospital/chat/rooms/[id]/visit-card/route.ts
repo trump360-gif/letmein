@@ -29,11 +29,11 @@ export async function POST(
   }
 
   const body = await request.json()
-  const { scheduledAt, note } = body as { scheduledAt: string; note?: string }
+  const { proposedDate, proposedTime, note } = body as { proposedDate: string; proposedTime: string; note?: string }
 
-  if (!scheduledAt) {
+  if (!proposedDate || !proposedTime) {
     return NextResponse.json(
-      { success: false, error: { code: 'BAD_REQUEST', message: '방문 예약 날짜를 입력하세요.' } },
+      { success: false, error: { code: 'BAD_REQUEST', message: '방문 예약 날짜와 시간을 입력하세요.' } },
       { status: 400 },
     )
   }
@@ -43,14 +43,15 @@ export async function POST(
     id: bigint
     room_id: bigint
     hospital_id: bigint
-    scheduled_at: Date
+    proposed_date: string
+    proposed_time: string
     note: string | null
     status: string
     created_at: Date
   }>>`
-    INSERT INTO visit_cards (room_id, hospital_id, scheduled_at, note, status, created_at)
-    VALUES (${roomId}, ${hospitalId}, ${new Date(scheduledAt)}, ${note ?? null}, 'pending', NOW())
-    RETURNING id, room_id, hospital_id, scheduled_at, note, status, created_at
+    INSERT INTO visit_cards (room_id, hospital_id, proposed_date, proposed_time, note, status, created_at)
+    VALUES (${roomId}, ${hospitalId}, ${proposedDate}, ${proposedTime}, ${note ?? null}, 'proposed', NOW())
+    RETURNING id, room_id, hospital_id, proposed_date, proposed_time, note, status, created_at
   `
 
   const visitCard = visitCards[0]
@@ -64,7 +65,8 @@ export async function POST(
 
   const cardContent = JSON.stringify({
     visitCardId: visitCard.id.toString(),
-    scheduledAt: visitCard.scheduled_at.toISOString(),
+    proposedDate: visitCard.proposed_date,
+    proposedTime: visitCard.proposed_time,
     note: visitCard.note ?? null,
     status: visitCard.status,
   })
@@ -90,7 +92,8 @@ export async function POST(
         id: visitCard.id.toString(),
         roomId: visitCard.room_id.toString(),
         hospitalId: visitCard.hospital_id.toString(),
-        scheduledAt: visitCard.scheduled_at.toISOString(),
+        proposedDate: visitCard.proposed_date,
+        proposedTime: visitCard.proposed_time,
         note: visitCard.note,
         status: visitCard.status,
         createdAt: visitCard.created_at.toISOString(),

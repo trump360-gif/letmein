@@ -24,11 +24,12 @@ export async function getSessionAdminId(): Promise<bigint | null> {
 
 /**
  * 현재 세션의 role을 반환한다. ('admin' | 'hospital' | null)
+ * hospital_token 또는 admin_token을 모두 확인한다.
  */
 export async function getSessionRole(): Promise<'admin' | 'hospital' | null> {
   try {
     const cookieStore = cookies()
-    const token = cookieStore.get('admin_token')?.value
+    const token = cookieStore.get('hospital_token')?.value ?? cookieStore.get('admin_token')?.value
     if (!token) return null
     const { payload } = await jwtVerify(token, SECRET)
     const role = payload.role as string | undefined
@@ -42,11 +43,12 @@ export async function getSessionRole(): Promise<'admin' | 'hospital' | null> {
 /**
  * role=hospital 세션에서 hospitalId를 BigInt로 반환한다.
  * role이 hospital이 아니거나 hospitalId가 없으면 null을 반환한다.
+ * hospital_token을 우선 확인하고, 없으면 admin_token을 확인한다.
  */
 export async function getSessionHospitalId(): Promise<bigint | null> {
   try {
     const cookieStore = cookies()
-    const token = cookieStore.get('admin_token')?.value
+    const token = cookieStore.get('hospital_token')?.value ?? cookieStore.get('admin_token')?.value
     if (!token) return null
     const { payload } = await jwtVerify(token, SECRET)
     if (payload.role !== 'hospital') return null

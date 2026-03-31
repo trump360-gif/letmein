@@ -22,11 +22,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const token = request.cookies.get('admin_token')?.value
+  // hospital 라우트는 hospital_token, 어드민 라우트는 admin_token 사용
+  const isHospitalPath = pathname.startsWith('/hospital')
+  const token = isHospitalPath
+    ? (request.cookies.get('hospital_token')?.value ?? request.cookies.get('admin_token')?.value)
+    : request.cookies.get('admin_token')?.value
 
   if (!token) {
     // 병원 라우트(/hospital/*)는 /hospital-login으로, 나머지는 /login으로
-    if (pathname.startsWith('/hospital')) {
+    if (isHospitalPath) {
       return NextResponse.redirect(new URL('/hospital-login', request.url))
     }
     return NextResponse.redirect(new URL('/login', request.url))
@@ -52,9 +56,10 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next()
     }
   } catch {
-    const res = pathname.startsWith('/hospital')
+    const res = isHospitalPath
       ? NextResponse.redirect(new URL('/hospital-login', request.url))
       : NextResponse.redirect(new URL('/login', request.url))
+    res.cookies.delete('hospital_token')
     res.cookies.delete('admin_token')
     return res
   }

@@ -44,7 +44,7 @@ export async function POST() {
     },
   })
 
-  res.cookies.set('admin_token', token, {
+  res.cookies.set('hospital_token', token, {
     httpOnly: true,
     secure: false,
     sameSite: 'lax',

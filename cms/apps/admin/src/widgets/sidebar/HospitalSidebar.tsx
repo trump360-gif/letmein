@@ -8,6 +8,8 @@ import {
   MessageSquare,
   Crown,
   Megaphone,
+  Building,
+  Users,
   LogOut,
 } from 'lucide-react'
 import { cn } from '@letmein/utils'
@@ -26,6 +28,8 @@ const navigation: NavItem[] = [
   { name: '채팅', href: '/hospital/chat', icon: MessageSquare },
   { name: '프리미엄', href: '/hospital/premium', icon: Crown },
   { name: '광고 관리', href: '/hospital/ads', icon: Megaphone },
+  { name: '프로필 관리', href: '/hospital/profile', icon: Building },
+  { name: '의료진 관리', href: '/hospital/doctors', icon: Users },
 ]
 
 export function HospitalSidebar() {

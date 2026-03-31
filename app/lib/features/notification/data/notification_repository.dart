@@ -53,9 +53,9 @@ class NotificationRepository {
 
   // ── Mark Read ────────────────────────────────
 
-  /// POST /api/v1/notifications/:id/read
+  /// PUT /api/v1/notifications/:id/read
   Future<void> markRead(int id) async {
-    await _dio.post<void>('/notifications/$id/read');
+    await _dio.put<void>('/notifications/$id/read');
   }
 
   // ── Unread Count ─────────────────────────────

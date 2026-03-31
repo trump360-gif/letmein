@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    res.cookies.set('admin_token', token, {
+    res.cookies.set('hospital_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

@@ -38,8 +38,8 @@ class CommunityRepository {
       '/posts',
       queryParameters: {
         'board_type': boardType,
-        'category_id': ?categoryId,
-        'hospital_id': ?hospitalId,
+        if (categoryId != null) 'category_id': categoryId,
+        if (hospitalId != null) 'hospital_id': hospitalId,
         'sort': sort,
         'page': page,
         'limit': limit,
@@ -112,7 +112,7 @@ class CommunityRepository {
       '/posts/$postId/comments',
       data: {
         'content': content,
-        'parentId': ?parentId,
+        if (parentId != null) 'parentId': parentId,
         'isAnonymous': isAnonymous,
       },
     );
@@ -149,7 +149,7 @@ class CommunityRepository {
         'targetType': targetType,
         'targetId': targetId,
         'reason': reason,
-        'description': ?description,
+        if (description != null) 'description': description,
       },
     );
   }

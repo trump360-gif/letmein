@@ -32,12 +32,13 @@ export async function GET(
     id: bigint
     room_id: bigint
     hospital_id: bigint
-    scheduled_at: Date
+    proposed_date: string
+    proposed_time: string
     note: string | null
     status: string
     created_at: Date
   }>>`
-    SELECT id, room_id, hospital_id, scheduled_at, note, status, created_at
+    SELECT id, room_id, hospital_id, proposed_date, proposed_time, note, status, created_at
     FROM visit_cards
     WHERE room_id = ${roomId} AND hospital_id = ${hospitalId}
     ORDER BY created_at DESC
@@ -50,7 +51,8 @@ export async function GET(
         id: vc.id.toString(),
         roomId: vc.room_id.toString(),
         hospitalId: vc.hospital_id.toString(),
-        scheduledAt: vc.scheduled_at.toISOString(),
+        proposedDate: vc.proposed_date,
+        proposedTime: vc.proposed_time,
         note: vc.note,
         status: vc.status,
         createdAt: vc.created_at.toISOString(),
