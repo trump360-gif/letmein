@@ -38,6 +38,7 @@ export async function POST(
     )
   }
 
+  try {
   // Create visit card via raw SQL (no Prisma model)
   const visitCards = await prisma.$queryRaw<Array<{
     id: bigint
@@ -50,7 +51,7 @@ export async function POST(
     created_at: Date
   }>>`
     INSERT INTO visit_cards (room_id, hospital_id, proposed_date, proposed_time, note, status, created_at)
-    VALUES (${roomId}, ${hospitalId}, ${proposedDate}, ${proposedTime}, ${note ?? null}, 'proposed', NOW())
+    VALUES (${roomId}, ${hospitalId}, ${proposedDate}::date, ${proposedTime}, ${note ?? null}, 'proposed', NOW())
     RETURNING id, room_id, hospital_id, proposed_date, proposed_time, note, status, created_at
   `
 
@@ -100,4 +101,8 @@ export async function POST(
       },
     },
   })
+  } catch (error) {
+    console.error('Visit card POST error:', error)
+    return NextResponse.json({ success: false, error: String(error) }, { status: 500 })
+  }
 }

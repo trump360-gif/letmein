@@ -3,6 +3,7 @@ import { prisma } from '@letmein/db'
 import { getSessionHospitalId } from '@/lib/session'
 
 export async function GET() {
+  try {
   const hospitalId = await getSessionHospitalId()
   if (!hospitalId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -38,6 +39,10 @@ export async function GET() {
     detailedDescription: hospital.detailedDescription,
     galleryImages: hospital.galleryImages,
   })
+  } catch (error) {
+    console.error('Profile GET error:', error)
+    return NextResponse.json({ error: String(error) }, { status: 500 })
+  }
 }
 
 export async function PUT(request: NextRequest) {
