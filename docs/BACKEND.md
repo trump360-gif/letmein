@@ -1,6 +1,6 @@
 # BACKEND.md -- letmein API Spec
 
-Tech: TypeScript (Fastify) + Prisma + PostgreSQL + Redis + Centrifugo + Cloudflare R2 | DAU 100K
+Tech: Next.js (API Routes) + Prisma + PostgreSQL (PostGIS) + Redis + PgBouncer + BullMQ + Centrifugo (ws.codeb.kr) + Cloudflare R2
 
 ## 1. DB Schema (Prisma)
 
@@ -31,6 +31,7 @@ model User { // 사용자
   reviews    Review[]
   reports    Report[] @relation("Reporter")
   notifications Notification[]
+  bookmarks Bookmark[]
   @@index([kakaoId]); @@index([role]); @@index([deletedAt])
   @@map("users")
 }
@@ -43,8 +44,7 @@ model Hospital { // 병원
   licensePhotoUrl String         @map("license_photo_url")
   name            String
   address         String
-  lat             Float
-  lng             Float
+  location        Unsupported("geography(Point, 4326)")  // PostGIS
   phone           String
   hours           String?
   description     String?
@@ -57,7 +57,8 @@ model Hospital { // 병원
   chatRooms   ChatRoom[]
   posts       Post[] @relation("HospitalPosts")
   reviews     Review[]
-  @@index([status]); @@index([lat, lng]); @@index([name])
+  bookmarks   Bookmark[]
+  @@index([status]); // PostGIS GiST index는 마이그레이션 SQL에서 수동 생성; @@index([name])
   @@map("hospitals")
 }
 enum HospitalStatus { PENDING; APPROVED; REJECTED; SUSPENDED }
@@ -237,6 +238,39 @@ model Notification { // 알림
   user User @relation(fields: [userId], references: [id])
   @@index([userId, readAt]); @@index([userId, createdAt]); @@map("notifications")
 }
+
+model Bookmark { // 병원 찜
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  hospitalId String   @map("hospital_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  user     User     @relation(fields: [userId], references: [id])
+  hospital Hospital @relation(fields: [hospitalId], references: [id])
+  @@unique([userId, hospitalId]); @@index([userId]); @@map("bookmarks")
+}
+
+model FilterKeyword { // 금칙어 사전
+  id        String   @id @default(cuid())
+  keyword   String
+  category  FilterCategory
+  isRegex   Boolean  @default(false) @map("is_regex")
+  createdAt DateTime @default(now()) @map("created_at")
+  @@index([category]); @@map("filter_keywords")
+}
+enum FilterCategory { PRICE; CONTACT; EFFECT_GUARANTEE; COMPETITOR }
+
+model ImageJob { // 이미지 처리 작업 추적
+  id        String       @id @default(cuid())
+  sourceUrl String       @map("source_url")
+  thumbUrl  String?      @map("thumb_url")
+  mediumUrl String?      @map("medium_url")
+  status    ImageJobStatus @default(PENDING)
+  attempts  Int          @default(0)
+  error     String?
+  createdAt DateTime     @default(now()) @map("created_at")
+  @@index([status]); @@map("image_jobs")
+}
+enum ImageJobStatus { PENDING; PROCESSING; COMPLETED; FAILED }
 ```
 
 ## 2. Entity State Machines
@@ -261,8 +295,10 @@ Report:    PENDING --[resolve]--> RESOLVED | PENDING --[dismiss]--> DISMISSED
 
 ## 3. REST API
 
-Base: `/api/v1` | Auth: `Authorization: Bearer <JWT>` | Pagination: `?cursor=<id>&limit=20`
-JWT: accessToken 30min, refreshToken 14d. Redis stores refresh for revocation.
+Base: `/api/v1` | Auth: `Authorization: Bearer <JWT>` | Pagination: `?page=1&limit=20`
+JWT: accessToken 30min, refreshToken 14d. Redis 캐시 + DB 저장 (Redis 장애 시 DB fallback).
+Centrifugo: ws.codeb.kr (namespace: letmein), 채널 형식: `letmein:chat_<roomId>`
+PgBouncer: Transaction mode, 연결 문자열 `?pgbouncer=true`
 Rate limit: 100 req/min per IP (auth), 20 req/min per IP (unauth). 429 Too Many Requests.
 Error: `{ "error": "msg", "code": "CODE" }`
 
@@ -270,6 +306,14 @@ Error: `{ "error": "msg", "code": "CODE" }`
 Auth: none
 ```json
 // Req:  { "accessToken": "kakao_token" }
+// Res:  { "accessToken": "jwt", "refreshToken": "rt", "user": { "id": "clx1", "nickname": "u1", "role": "USER", "isNew": true } }
+```
+Error: 401 invalid token
+
+### POST /api/v1/auth/apple
+Auth: none | iOS만
+```json
+// Req:  { "identityToken": "apple_token", "authorizationCode": "code" }
 // Res:  { "accessToken": "jwt", "refreshToken": "rt", "user": { "id": "clx1", "nickname": "u1", "role": "USER", "isNew": true } }
 ```
 Error: 401 invalid token
@@ -455,6 +499,14 @@ Auth: required
 ```
 Error: 400 unsupported type, 413 max 10MB
 
+### POST /api/v1/images/upload-complete
+Auth: required
+```json
+// Req:  { "fileUrl": "https://r2/uploads/clx/photo.webp", "context": "post" }
+// Res:  { "jobId": "ij1", "status": "PENDING" }
+```
+BullMQ 잡 큐잉 → 워커가 썸네일(300px) + 중간(800px) 비동기 생성
+
 ### GET /api/v1/users/me
 Auth: required
 ```json
@@ -473,6 +525,32 @@ Auth: required
 ```json
 // Req:  { "targetType": "POST", "targetId": "p1", "reason": "광고성 게시글" }
 // Res:  { "id": "rpt1", "status": "PENDING" }
+```
+
+### POST /api/v1/bookmarks
+Auth: required
+```json
+// Req:  { "hospitalId": "h1" }
+// Res:  { "id": "bk1", "hospitalId": "h1", "createdAt": "..." }
+```
+Error: 409 already bookmarked
+
+### DELETE /api/v1/bookmarks/:hospitalId
+Auth: required
+```json
+// Res:  { "deleted": true }
+```
+
+### GET /api/v1/bookmarks
+Auth: required | Query: `?page=1&limit=20`
+```json
+// Res:  { "items": [{ "hospitalId": "h1", "name": "A성형외과", "rating": 4.5, "reviewCount": 128, "specialties": ["쌍꺼풀"], "distance": 2.3 }], "total": 5, "page": 1 }
+```
+
+### GET /api/v1/bookmarks/compare
+Auth: required | Query: `?hospitalIds=h1,h2,h3`
+```json
+// Res:  { "hospitals": [{ "id": "h1", "name": "A성형외과", "specialties": ["쌍꺼풀","앞트임"], "rating": 4.5, "reviewCount": 128, "distance": 2.3, "responseTime": "30분" }] }
 ```
 
 ### PUT /api/v1/admin/hospitals/:id/approve
@@ -507,6 +585,27 @@ Auth: required
 // Res:  { "id": "n1", "readAt": "2026-03-29T12:00:00Z" }
 ```
 
+### GET /api/v1/admin/filter-keywords
+Auth: ADMIN | Query: `?category=PRICE&page=1&limit=50`
+```json
+// Res:  { "items": [{ "id": "fk1", "keyword": "공일공", "category": "CONTACT", "isRegex": false }], "total": 120, "page": 1 }
+```
+
+### POST /api/v1/admin/filter-keywords
+Auth: ADMIN
+```json
+// Req:  { "keyword": "오만원", "category": "PRICE", "isRegex": false }
+// Res:  { "id": "fk2", "keyword": "오만원", "category": "PRICE" }
+```
+Redis 캐시 즉시 갱신
+
+### DELETE /api/v1/admin/filter-keywords/:id
+Auth: ADMIN
+```json
+// Res:  { "deleted": true }
+```
+Redis 캐시 즉시 갱신
+
 ## 4. Auto-Matching Algorithm
 
 Trigger: ConsultationRequest created --> BullMQ job enqueued.
@@ -515,7 +614,7 @@ Trigger: ConsultationRequest created --> BullMQ job enqueued.
 Score = specialty_match(0.4) + area_distance(0.3) + response_rate(0.2) + load_balance(0.1)
 
 specialty_match: 100=exact(category+subPart), 50=category only, 0=none
-area_distance:   100 if <=3km, linear decay to 0 at 30km (Haversine on lat/lng)
+area_distance:   100 if <=3km, linear decay to 0 at 30km (PostGIS ST_Distance)
 response_rate:   (replied within 1h / total matches) * 100, cached in Redis hourly
 load_balance:    100 - (active_chats / max_capacity * 100)
 ```
@@ -538,6 +637,16 @@ Deletion:
   withdraw    -> soft delete, hard delete after 7-day grace
   consent rev -> immediate hard delete all user images
   chat close  -> retain 90 days then purge
+
+Thumbnail Rotation (피드 노출):
+  - 게시글 사진 전체에 대해 썸네일 300px 생성
+  - thumbnailIndex = hash(postId + date) % thumbnails.length
+  - 일자 기반 로테이션 → 같은 글이 매일 다른 사진으로 노출
+
+BullMQ 설정:
+  attempts: 3, backoff: exponential 5s
+  DLQ: 3회 실패 시 Failed 상태 보존 + 관리자 알림 (Slack/Discord)
+  CMS에서 실패 목록 조회 + 수동 재시도 가능
 ```
 
 ## 6. Keyword Filtering
@@ -550,4 +659,16 @@ Patterns:
   COMPETITOR: Redis key filter:competitors (configurable blocklist)
 Applied to: ConsultationRequest.note, Message.content, Post.content, Comment.content
 Action: block write (422), return { "error": "금지된 표현이 포함되어 있습니다", "code": "KEYWORD_BLOCKED" }, auto-log to reports
+
+Filter Dictionary (금칙어 사전):
+  DB: FilterKeyword 테이블 (keyword, category, isRegex)
+  Cache: Redis Set `letmein:filter_keywords` (5분 TTL)
+  CMS: 관리자가 즉시 추가/삭제 → Redis 캐시 즉시 갱신
+  한국어 변형 대응: "공일공", "ㅋr톡", "오만원", "가.격" 등
+
+Push Dedup (Centrifugo Presence 기반):
+  메시지 전송 시 Centrifugo Presence로 수신자 Online/Offline 확인
+  Online → 푸시 미발송 (WS로 이미 수신)
+  Offline → FCM 푸시 발송
+  클라이언트: 메시지 ID 기반 중복 제거
 ```

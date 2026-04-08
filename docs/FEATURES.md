@@ -1,6 +1,6 @@
 # FEATURES.md - 블랙라벨 Flutter App Feature Spec
 
-> Tech: Flutter 3.x + Riverpod + GoRouter | Fastify TS Server | Centrifugo WS | SQLite local | DAU 100K target
+> Tech: Flutter 3.x + Riverpod + GoRouter + Freezed | Next.js API Server | Centrifugo WS (ws.codeb.kr, namespace: letmein) | Redis JSON Cache + BullMQ
 
 ---
 
@@ -22,6 +22,9 @@
                 │                     │
                 ▼                     │
      /consultation/:id/matches ───────┘
+                                      │
+               /hospital/:id ──→ /hospital/:id/compare (찜 비교)
+                              ──→ /bookmarks (찜 목록)
                 │
                 ▼
             /chat ─── /chat/:id
@@ -41,6 +44,8 @@
 | `/chat/:id` | required | user,hospital | ChatRoomScreen |
 | `/hospital` | required | all | HospitalListScreen |
 | `/hospital/:id` | required | all | HospitalDetailScreen |
+| `/hospital/:id/compare` | required | all | HospitalCompareScreen |
+| `/bookmarks` | required | user | BookmarkListScreen |
 | `/hospital/register` | required | hospital | HospitalRegisterScreen |
 | `/community` | required | all | CommunityFeedScreen |
 | `/community/create` | required | user | CommunityCreateScreen |
@@ -66,8 +71,13 @@
 - 네트워크 끊김: `OfflineBanner` 상단 고정, 자동 복구 시 dismiss
 - 400 계열: 인라인 텍스트 에러, 필드 하단
 
-### Loading
-- 리스트: `Shimmer` skeleton 3~5행 / 상세: 레이아웃 skeleton / 버튼: `CircularProgressIndicator` 교체
+### Loading (5계층 최적화)
+- Layer 1: `Shimmer` skeleton 즉시 표시 (0ms)
+- Layer 2: Redis JSON 캐시 → 피드 데이터 즉시 반환 (~5ms)
+- Layer 3: WebP 썸네일 300px 우선 로딩 (~30KB)
+- Layer 4: 상세 진입 시 800px, 확대 시 2048px 지연 로딩
+- Layer 5: R2 CDN 엣지 캐시
+- 버튼 로딩: `CircularProgressIndicator` 교체
 
 ### Empty State
 - 일러스트 + 안내 텍스트 + CTA 버튼 (예: "아직 상담 내역이 없어요" + "상담 요청하기")
@@ -76,8 +86,11 @@
 - 모든 리스트 화면 `RefreshIndicator` 적용, ref.invalidate(provider) 호출
 
 ### Image Upload Pattern
-- 갤러리/카메라 → EXIF strip → 2048px WebP 80% → presigned URL PUT → imageKey 서버 전송
-- 동시 최대 5장, 개별 progress, 실패 시 retry 1회 자동 + 수동 버튼
+- 갤러리/카메라 → EXIF strip → 2048px WebP q80 → presigned URL PUT → R2 직접 업로드
+- 업로드 완료 → POST /images/upload-complete → BullMQ 비동기 처리
+- 서버 워커: 썸네일(300px) + 중간(800px) WebP 자동 생성
+- 동시 최대 5장, 개별 progress, 실패 시 BullMQ 자동 재시도 3회
+- 사용자는 원본 업로드만 대기, 썸네일 생성은 백그라운드
 
 ---
 
@@ -110,7 +123,7 @@ Layout: 중앙 로고 + 소셜 로그인 버튼 스택
 Components:
 - 앱 로고 + "블랙라벨" 텍스트
 - `KakaoLoginButton`: 카카오 SDK 연동
-- `AppleSignInButton`: iOS만 표시 (MVP-B)
+- `AppleSignInButton`: iOS만 표시 (POST /auth/apple)
 - 하단 약관 동의 링크: 이용약관 / 개인정보처리방침
 
 Interactions:
@@ -210,7 +223,7 @@ Layout: Stepper 5단계, 상단 StepIndicator bar
 Interactions:
 - 뒤로가기: 이전 스텝 (데이터 유지)
 - Step 간 데이터 로컬 유지 (provider state)
-- 앱 종료 후 복귀: SQLite 임시 저장 → 이어하기 다이얼로그
+- 앱 종료 후 복귀: 로컬 저장소 임시 저장 → "작성 중인 상담이 있어요. 이어서 할까요?" 안내 → "이어서 작성" 탭 시 중단 단계부터 재개
 
 Constraints:
 - 사진은 EXIF 제거 후 업로드
@@ -310,6 +323,7 @@ Interactions:
 - 사진 전송 → 업로드 후 이미지 메시지
 - 스크롤 최상단 → 이전 메시지 로드 (pagination)
 - 방문 카드 수락 → 확정 상태 변경
+- 푸시 중복 방지: Centrifugo Presence 기반 Online 감지 → Online 시 푸시 미발송
 
 Constraints:
 - 채팅 유효기간: 마지막 메시지 후 30일
@@ -356,9 +370,11 @@ Components:
 - `SpecialtySection`: 전문 시술 칩 / `DoctorSection`: 의료진 소개
 - `ReviewSection`: 최근 리뷰 3개 + "전체보기" (별점/텍스트/작성일)
 - `CTAButton`: "상담 요청하기" 하단 고정
+- `BookmarkButton`: 찜 토글 (POST/DELETE /bookmarks), 하트 아이콘
 
 Interactions:
 - CTA → `/consultation/create` (병원 프리셋), 리뷰 전체보기 → 시트, 이미지 탭 → 갤러리
+- 찜 → optimistic update, 찜 목록에서 복수 선택 → `/hospital/:id/compare`
 
 Constraints: 가격 정보 미표시, 의료광고 심의 필 마크 표시 의무
 
@@ -367,6 +383,29 @@ AC:
 - [ ] 리뷰 섹션 노출 (없으면 "아직 리뷰가 없어요")
 - [ ] CTA → 상담 생성 화면 이동 (병원 프리셋)
 - [ ] 가격 정보 어디에도 미표시
+- [ ] 찜 토글 정상 동작 (서버 동기화)
+- [ ] 찜 목록에서 비교 화면 진입 가능
+
+### 3-j2. HospitalCompareScreen (/hospital/:id/compare)
+
+Provider: `hospitalCompareProvider` (AsyncNotifier<List<HospitalCompare>>)
+Layout: 찜한 병원 나란히 비교 (최대 3곳)
+
+Components:
+- `CompareHeader`: 비교 대상 병원 선택 (찜 목록에서)
+- `CompareTable`: 항목별 나란히 비교
+  - 전문분야, 평점, 리뷰 수, 거리, 평균 응답시간
+- `CompareActionBar`: 하단 "상담 요청하기" CTA
+
+Interactions:
+- 병원 추가/제거 → 비교 테이블 실시간 갱신
+- 병원명 탭 → `/hospital/:id` 상세
+- CTA → 선택 병원으로 상담 요청
+
+AC:
+- [ ] 최대 3곳 비교 가능
+- [ ] 항목별 나란히 정상 표시
+- [ ] 비교에서 바로 상담 요청 진입
 
 ### 3-k. CommunityFeedScreen (/community)
 
@@ -375,7 +414,7 @@ Layout: 탭바 (전체/비포앤애프터/자유) + 무한스크롤 카드
 
 Components:
 - `CategoryTabBar`: 전체 / 비포앤애프터 / 자유게시판
-- `PostCard`: 썸네일(블러 가능) + 제목 + 태그 + 좋아요/댓글 수
+- `PostCard`: 썸네일(일자 기반 로테이션, 블러 옵션) + 제목 + 태그 + 좋아요/댓글 수
 - `FloatingWriteButton` → `/community/create`
 - `TagFilter`: 인기 태그 가로 스크롤
 
@@ -390,6 +429,7 @@ AC:
 - [ ] 무한스크롤 20개 단위
 - [ ] 좋아요 optimistic update + 서버 동기화
 - [ ] 비포앤애프터 이미지 블러 처리 (미로그인/설정에 따라)
+- [ ] 같은 게시글이 매일 다른 썸네일로 노출 (로테이션)
 
 ### 3-l. CommunityCreateScreen (/community/create)
 
@@ -444,7 +484,7 @@ Layout: 프로필 헤더 + 메뉴 리스트
 
 Components:
 - `ProfileHeader`: 프로필 이미지 + 닉네임 + 가입일
-- `MenuSection`: 내 상담 / 내 게시글 / 내 리뷰 / 좋아요한 글 → 각 리스트 화면
+- `MenuSection`: 내 상담 / 내 게시글 / 내 리뷰 / 좋아요한 글 / 내 찜 목록 → 각 리스트 화면
 - `SettingsButton` → `/mypage/settings`
 
 Interactions:
@@ -596,5 +636,5 @@ AC:
 
 ### Push 설정 규칙
 - 기본: 모든 알림 ON, 유저 제어: 카테고리별 on/off (상담/채팅/커뮤니티)
-- 야간 제한: 21:00~08:00 무음 (설정 가능), 배지: 안 읽은 채팅 + 매칭 완료 합산
+- 야간 제한: 22:00~08:00 기본 무음 (설정에서 시간대 조절 가능), 아침 8시 일괄 요약 발송, 배지: 안 읽은 채팅 + 매칭 완료 합산
 - FCM topic: `user_{userId}`, `hospital_{hospitalId}` / Centrifugo: 실시간 전송 (push 보조)

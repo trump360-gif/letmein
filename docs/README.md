@@ -34,17 +34,49 @@
 | App | Flutter 3.x | iOS / Android 동시 지원 |
 | 상태관리 | Riverpod 2.x | code generation 사용 |
 | 라우팅 | GoRouter | 딥링크, 리다이렉트 가드 |
-| 로컬 DB | SQLite (drift) | 오프라인 캐시, 채팅 버퍼 |
-| API 서버 | Fastify 5.x + TypeScript | JSON Schema 자동 검증 |
+| 모델 | Freezed | 불변 모델 생성 |
+| API 서버 | Next.js | API Routes / Server Actions |
+| 관리자 CMS | Next.js | 백엔드와 같은 프로젝트 내 웹 |
 | ORM | Prisma 6.x | PostgreSQL 연결 |
-| DB | PostgreSQL 16 | 메인 저장소 |
-| 캐시/세션 | Redis 7 | 매칭 큐, 세션, rate limit |
-| 인증 | JWT (access 30분, refresh 14일) | Redis 저장, 강제 로그아웃 지원 |
-| 채팅 | Centrifugo 5.x | 독립 WebSocket 서버, JWT 인증 |
-| 파일 저장 | Cloudflare R2 | S3 호환, presigned URL |
-| 푸시 | FCM + APNs | Fastify에서 발송 |
+| DB | PostgreSQL 16 + PostGIS | 위치 기반 검색 (GiST 인덱스) |
+| DB 풀링 | PgBouncer | letmein 전용, Transaction mode |
+| 캐시 | Redis | 피드 JSON 캐시, JWT 캐시, 매칭 응답률 (DB fallback 설계) |
+| 작업 큐 | BullMQ (Redis 위) | 이미지 비동기 처리, DLQ + 3회 재시도 |
+| 실시간 채팅 | Centrifugo 5.x | 기존 ws.codeb.kr 재사용, 네임스페이스 분리 |
+| 파일 저장 | Cloudflare R2 | S3 호환, presigned URL, private/public 버킷 |
+| 푸시 | FCM + APNs | Next.js에서 발송, 야간 무음 + 아침 요약 |
+| 인증 | JWT (Redis 캐시 + DB 저장) | 카카오 로그인 + Apple 로그인 (iOS만) |
 | 배포 | CodeB CI/CD | Blue-Green, Docker |
-| 목표 규모 | DAU 100K | 수평 확장 대비 설계 |
+
+### 2.1 인프라 배치도 (CodeB 서버 재사용, 서버 추가 없음)
+
+```
+App 서버 (158.247.203.55)
+├── [기존] workb 컨테이너              ← 변경 없음
+├── [추가] letmein-api                 ← Next.js (API + CMS 웹)
+└── [추가] letmein-worker              ← BullMQ 이미지 처리 워커
+
+Streaming 서버 (141.164.42.213)
+└── [기존] Centrifugo 5.x
+    ├── namespace: workb               ← 변경 없음
+    └── namespace: letmein             ← 추가 (JWT secret 별도)
+
+Storage 서버 (64.176.226.119)
+├── PostgreSQL :5432
+│   ├── DB: workb                      ← 변경 없음
+│   └── DB: letmein                    ← 추가 (PostGIS 확장)
+├── PgBouncer :6432                    ← 추가 (letmein 전용, Transaction mode)
+│   └── pool: letmein (max 30, reserve 5)
+└── Redis
+    ├── prefix: workb:                 ← 변경 없음
+    └── prefix: letmein:               ← 추가
+
+Cloudflare R2
+├── bucket: letmein-private            ← 상담/채팅 사진 (서명 URL, 1시간 만료)
+└── bucket: letmein-public             ← 커뮤니티/병원/리뷰 (CDN)
+```
+
+기존 서비스 영향: 없음 (Caddy, PowerDNS, workb 일체 변경 없음)
 
 ---
 
@@ -108,43 +140,49 @@ lib/
 └── gen/                              # 코드 생성 파일 (freezed, riverpod)
 ```
 
-### 3.2 Server (Fastify)
+### 3.2 Server (Next.js)
 
 ```
 server/
 ├── src/
-│   ├── index.ts                      # Fastify 부트스트랩
-│   ├── config/
-│   │   ├── env.ts                    # 환경변수 스키마
-│   │   └── redis.ts
-│   ├── plugins/
-│   │   ├── auth.ts                   # JWT 검증 플러그인
-│   │   ├── rate-limit.ts
-│   │   └── error-handler.ts
-│   ├── routes/
-│   │   ├── auth/                     # 회원가입, 로그인, 본인인증
-│   │   ├── consultation/             # 상담 요청 CRUD
-│   │   ├── matching/                 # 매칭 로직, 병원 배정
-│   │   ├── hospital/                 # 병원 정보, 검색
-│   │   ├── chat/                     # Centrifugo 토큰 발급, 메시지 저장
-│   │   ├── community/               # 후기, 비포앤애프터
-│   │   ├── notification/             # FCM/APNs 발송
-│   │   ├── upload/                   # R2 presigned URL 발급
-│   │   └── admin/                    # CMS API
+│   ├── app/
+│   │   └── api/
+│   │       └── v1/
+│   │           ├── auth/                  # 카카오/Apple 로그인, JWT
+│   │           ├── consultations/         # 상담 요청 CRUD
+│   │           ├── matching/              # 매칭 로직, 병원 배정
+│   │           ├── hospitals/             # 병원 정보, 검색
+│   │           ├── chats/                 # Centrifugo 토큰 발급, 메시지 저장
+│   │           ├── posts/                 # 커뮤니티 (후기, 비포앤애프터)
+│   │           ├── reviews/               # 리뷰 CRUD
+│   │           ├── notifications/         # 알림 목록, 읽음 처리
+│   │           ├── images/                # R2 presigned URL 발급
+│   │           ├── bookmarks/             # 찜 추가/삭제, 병원 비교
+│   │           ├── reports/               # 신고
+│   │           ├── users/                 # 사용자 정보
+│   │           └── admin/                 # CMS API (병원 승인, 신고, 금칙어)
 │   ├── services/
-│   │   ├── matching.service.ts       # 매칭 알고리즘
-│   │   ├── keyword-filter.service.ts # 금칙어/금액 필터
-│   │   ├── centrifugo.service.ts     # Centrifugo HTTP API 호출
-│   │   └── notification.service.ts
-│   ├── middlewares/
-│   │   ├── age-verify.ts            # 18세 미만 차단
-│   │   └── hospital-verify.ts       # 병원 인증 상태 확인
-│   └── types/
+│   │   ├── matching.service.ts            # 매칭 알고리즘 (PostGIS)
+│   │   ├── keyword-filter.service.ts      # 금칙어 필터 (DB 사전 + Redis 캐시)
+│   │   ├── centrifugo.service.ts          # Centrifugo HTTP API (letmein 네임스페이스)
+│   │   ├── notification.service.ts        # FCM/APNs + 야간 보류 + Presence 중복 방지
+│   │   └── image.service.ts               # BullMQ 이미지 처리 워커
+│   ├── middleware/
+│   │   ├── auth.ts                        # JWT 검증 (Redis 캐시 → DB fallback)
+│   │   ├── age-verify.ts                  # 18세 미만 차단
+│   │   └── hospital-verify.ts             # 병원 인증 상태 확인
+│   └── lib/
+│       ├── prisma.ts                      # Prisma 클라이언트 (PgBouncer 연결)
+│       ├── redis.ts                       # Redis 클라이언트
+│       └── bullmq.ts                      # BullMQ 큐/워커 설정
 ├── prisma/
-│   ├── schema.prisma                 # DB 스키마
+│   ├── schema.prisma
 │   ├── migrations/
 │   └── seed.ts
+├── worker/
+│   └── image-worker.ts                    # BullMQ 이미지 처리 워커 (별도 프로세스)
 ├── Dockerfile
+├── Dockerfile.worker                      # 이미지 워커 전용
 └── package.json
 ```
 
@@ -228,7 +266,7 @@ server/
 - 아이콘: 24x24
 - 라벨: `caption` 토큰
 - 비활성: `text-disabled`, 활성: `accent`
-- 탭: 홈, 병원탐색, 상담요청, 채팅, 마이페이지
+- 탭: 홈, 병원, 내 상담, 커뮤니티, MY
 
 **Input Field**
 - 배경: `surface`
@@ -266,6 +304,9 @@ server/
 - 필터 동작: 발송 차단 + 발신자에게 안내 메시지 표시
 - 서버/클라이언트 양쪽에서 이중 필터링
 - 필터 우회 시도 (예: "삼백만") 대응: 한글 숫자 + 단위 조합도 필터링
+- 금칙어 사전(Dictionary) 테이블을 DB + Redis 캐시에 운영
+- 관리자 CMS에서 즉시 금칙어 추가/삭제 가능 (Redis 즉시 갱신)
+- 정규식 우회 대응: "공일공", "ㅋr톡", "오만원" 등 한국어 변형 패턴 포함
 
 ### 5.3 채팅 제약
 
@@ -305,7 +346,57 @@ NEVER: 병원 인증 상태 미확인 상태에서 매칭 참여 허용
 
 ---
 
-## 6. 용어 사전
+## 6. UX 아키텍처
+
+### 6.1 민감정보 심리적 안전감
+- 사진 업로드 전 안내: "사진은 매칭된 병원만 볼 수 있어요", "상담 종료 후 자동 삭제됩니다"
+- 암호화 아이콘 + 보안 배지 시각적 표시
+- 민감정보 동의 모달 (동의하고 계속하기 / 취소)
+- "사진 없이 상담하기" 선택지 제공
+
+### 6.2 사용자 식별
+- 닉네임 기반 활동, 실명 비공개
+- 상담 매칭 시 병원에 노출되는 정보: 닉네임 + 나이대 + 관심시술만
+- 채팅에서 실명은 유저가 자발적으로 공유
+
+### 6.3 병원 비교 (찜 기능)
+- 병원 상세에서 "찜" 가능
+- 찜한 병원 복수 선택 → 비교 화면 (전문분야, 평점, 리뷰 수, 거리, 응답시간 나란히 비교)
+
+### 6.4 상담 상태 실시간 피드백
+- 3단계 스텝 인디케이터: 상담 접수 → 병원 확인 → 상담 진행
+- 각 단계별 예상 소요시간 표시
+- Centrifugo WS로 실시간 상태 업데이트
+
+### 6.5 후기 신뢰도
+- 인증 배지: 매칭 → 채팅 → 방문 확인 완료 유저만 "인증 후기" 배지
+- 광고 콘텐츠 `[광고]` 라벨 필수 (의료법)
+- 피드 기본 정렬: 최신순
+
+### 6.6 로딩 최적화 5계층
+1. 스켈레톤 UI → 즉시 레이아웃 표시 (0ms)
+2. Redis JSON 캐시 → 피드 데이터 즉시 반환 (~5ms)
+3. WebP 썸네일 300px → 경량 이미지 우선 로딩 (~30KB)
+4. 원본 지연 로딩 → 상세 진입 시 800px, 확대 시 2048px
+5. R2 CDN → 엣지 캐시로 이미지 전송 최적화
+
+### 6.7 피드 썸네일 로테이션
+- 게시글 사진 전체에 대해 썸네일 생성
+- 일자 기반 로테이션: `thumbnailIndex = hash(postId + 날짜) % thumbnails.length`
+- 같은 글이 매일 다른 사진으로 노출 → 신선함 유지
+
+### 6.8 야간 푸시 배려
+- 기본값 22:00~08:00 무음, 설정에서 시간대 조절 가능
+- 아침 8시 일괄 요약 발송: "밤사이 N곳의 병원에서 상담 안내가 도착했어요"
+
+### 6.9 폼 상태 보존
+- 5단계 폼 작성 중 앱 종료 → 로컬 저장소 임시 저장
+- 재진입 시 "작성 중인 상담이 있어요. 이어서 할까요?" 안내
+- 뒤로가기 시 이전 단계 입력값 보존
+
+---
+
+## 7. 용어 사전
 
 | 용어 | 영문 키 | 정의 |
 |------|---------|------|
@@ -322,9 +413,9 @@ NEVER: 병원 인증 상태 미확인 상태에서 매칭 참여 허용
 
 ---
 
-## 7. 알림 매트릭스
+## 8. 알림 매트릭스
 
-### 7.1 유저 알림
+### 8.1 유저 알림
 
 | 이벤트 | 채널 | 제목 | 본문 템플릿 |
 |--------|------|------|------------|
@@ -336,7 +427,7 @@ NEVER: 병원 인증 상태 미확인 상태에서 매칭 참여 허용
 | 후기 작성 요청 | Push | 후기 작성 | "상담은 어떠셨나요? 후기를 남겨주세요" |
 | 상담 요청 만료 | Push + InApp | 상담 요청 종료 | "등록한 상담 요청이 만료되었어요" |
 
-### 7.2 병원 알림
+### 8.2 병원 알림
 
 | 이벤트 | 채널 | 제목 | 본문 템플릿 |
 |--------|------|------|------------|
@@ -347,9 +438,31 @@ NEVER: 병원 인증 상태 미확인 상태에서 매칭 참여 허용
 | 새 후기 등록 | Push + InApp | 새 후기 | "새로운 후기가 등록되었어요" |
 | 프리미엄 만료 임박 | Push | 구독 만료 예정 | "프리미엄 구독이 7일 후 만료돼요" |
 
-### 7.3 알림 설정
+### 8.3 알림 설정
 
 - 유저/병원 모두 항목별 Push ON/OFF 가능
 - InApp 알림은 항상 표시 (OFF 불가)
 - 야간 시간대 (22:00~08:00) Push 자동 보류, 아침 8시 일괄 발송
 - 매칭 관련 알림은 OFF 불가 (서비스 핵심 기능)
+
+---
+
+## 9. IA (Information Architecture) 페이지 넘버링
+
+> 디자인 시안(.pen) 확정 후 작성 예정
+
+### 넘버링 규칙
+
+- 바텀 탭 기준 대분류: `0.공통` / `1.홈` / `2.병원` / `3.내 상담` / `4.커뮤니티` / `5.MY` / `6.병원측` / `7.관리자 CMS`
+- 하위 화면은 소수점으로 확장: `2.2.1` (병원 상세 > 정보 탭)
+- 모달/바텀시트는 부모 화면 번호 + M: `3.1.4-M1` (민감정보 동의 모달)
+
+### 페이지 맵
+
+| 번호 | 화면명 | 설명 | API 매핑 | 디자인 Node ID |
+|------|--------|------|----------|---------------|
+| -    | -      | -    | -        | -             |
+
+> ※ .pen 디자인 시안 분석 후 전체 화면 기준으로 확정
+> ※ QA 버그 리포트, 개발 작업, 디자인 시안 간 동일 넘버링 사용
+> ※ 디자인 Node ID를 함께 기록하여 .pen 파일과 1:1 매핑
