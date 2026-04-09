@@ -190,91 +190,117 @@ server/
 
 ## 4. 디자인 시스템
 
+> 출처: beauty.pen — Brand Board & Design Tokens (Node: WCtA8)
+> 기본 테마: Premium Dark / Light 테마 지원
+
 ### 4.1 컬러 팔레트
 
-**기본 테마: Premium Dark / 라이트 테마 옵션 제공**
+**Surface (배경)**
 
-| 토큰 | Dark 값 | Light 값 | 용도 |
-|------|---------|----------|------|
-| `bg-primary` | `#0D0D0D` | `#FAFAFA` | 앱 배경 |
-| `bg-secondary` | `#1A1A1A` | `#F0F0F0` | 섹션 배경 |
-| `surface` | `#1E1E2E` | `#FFFFFF` | 카드, 시트 |
-| `surface-elevated` | `#252535` | `#F8F8F8` | 모달, 드롭다운 |
-| `accent` | `#C0392B` | `#C0392B` | 주요 CTA, 강조 |
-| `accent-pressed` | `#A93226` | `#A93226` | 버튼 pressed 상태 |
-| `sub-accent` | `#D4A574` | `#B8956A` | 프리미엄 라벨, 골드 뱃지 |
-| `text-primary` | `#F5F5F5` | `#1A1A1A` | 본문 텍스트 |
-| `text-secondary` | `#9E9E9E` | `#757575` | 부가 정보 |
-| `text-disabled` | `#616161` | `#BDBDBD` | 비활성 텍스트 |
-| `divider` | `#2A2A3A` | `#E0E0E0` | 구분선 |
-| `success` | `#27AE60` | `#27AE60` | 성공 상태 |
-| `warning` | `#F39C12` | `#F39C12` | 경고 |
-| `error` | `#E74C3C` | `#E74C3C` | 에러 |
-| `ad-label` | `#F39C12` | `#E67E22` | 광고 라벨 (의료법 56조) |
+| 토큰 | Dark | Light | 용도 |
+|------|------|-------|------|
+| `surface-primary` | `#0A0A0A` | `#F7F3EC` | 앱 배경 |
+| `surface-secondary` | `#141414` | `#FFFFFF` | 섹션 배경 |
+| `surface-tertiary` | `#1E1E1E` | `#F0EBE3` | 카드, 시트 |
+| `surface-elevated` | `#252525` | `#E8E2D9` | 모달, 드롭다운 |
+| `surface-inverse` | `#FFFFFF` | `#0A0A0A` | 반전 배경 |
+
+**Foreground (텍스트)**
+
+| 토큰 | Dark | Light | 용도 |
+|------|------|-------|------|
+| `fg-primary` | `#FFFFFF` | `#1F1A16` | 본문 텍스트 |
+| `fg-secondary` | `#A0A0A0` | `#4A4540` | 부가 정보 |
+| `fg-muted` | `#666666` | `#8A8279` | 비활성/힌트 |
+| `fg-inverse` | `#0A0A0A` | `#FFFFFF` | 반전 텍스트 |
+
+**Accent (강조)**
+
+| 토큰 | Dark | Light | 용도 |
+|------|------|-------|------|
+| `accent-burgundy` | `#8B1A2B` | `#8B1A2B` | 주요 CTA, 브랜드 |
+| `accent-light` | `#A62639` | `#A62639` | pressed/hover 상태 |
+| `accent-dark` | `#5C1018` | `#5C1018` | 어두운 강조 |
+| `accent-subtle` | `#2A1015` | `#F7C9CC` | 배경 힌트 |
+
+**Border (테두리)**
+
+| 토큰 | Dark | Light | 용도 |
+|------|------|-------|------|
+| `border-subtle` | `#2A2A2A` | `#E0D6CC` | 약한 구분선 |
+| `border-default` | `#333333` | `#D4C9BD` | 기본 테두리 |
+| `border-strong` | `#555555` | `#9A9088` | 강한 구분선 |
+
+**Status (상태) — Dark/Light 동일**
+
+| 토큰 | 값 | 용도 |
+|------|------|------|
+| `success` | `#1A8754` | 성공 |
+| `warning` | `#C4841D` | 경고 |
+| `error` | `#DC3545` | 에러 |
+| `info` | `#4A9FD8` | 정보 |
+| `ad-label` | `#C4841D` | 광고 라벨 (의료법 56조, warning과 동일) |
 
 ### 4.2 타이포그래피
 
-**폰트: Pretendard** (가변 폰트, 한/영 최적화)
+**폰트: Playfair Display (Display/H1) + Inter (H2/Body) + Geist (Caption/UI)**
 
-| 토큰 | 크기 | 굵기 | 행간 | 용도 |
+| 토큰 | 폰트 | 크기 | 굵기 | 용도 |
 |------|------|------|------|------|
-| `h1` | 24px | Light (300) | 1.4 | 화면 제목 |
-| `h2` | 18px | Medium (500) | 1.4 | 섹션 제목 |
-| `h3` | 16px | Medium (500) | 1.4 | 카드 제목 |
-| `body1` | 14px | Regular (400) | 1.6 | 본문 |
-| `body2` | 13px | Regular (400) | 1.5 | 보조 본문 |
-| `caption` | 12px | Regular (400) | 1.4 | 부가 정보, 타임스탬프 |
-| `cta` | 16px | SemiBold (600) | 1.0 | CTA 버튼 텍스트 |
-| `label` | 11px | Medium (500) | 1.2 | 뱃지, 태그 |
+| `display` | Playfair Display | 40px | Bold (700) | 브랜드 타이틀 (BLACK LABEL) |
+| `h1` | Playfair Display | 24px | Bold (700) | 화면 제목 |
+| `h2` | Inter | 18px | SemiBold (600) | 섹션 제목 |
+| `body` | Inter | 14px | Regular (400) | 본문 |
+| `caption` | Geist | 12px | Regular (400) | 부가 정보, 타임스탬프 |
 
 ### 4.3 컴포넌트 스펙
 
 **Card (상담 안내 카드)**
-- 배경: `surface`
+- 배경: `surface-tertiary`
 - border-radius: 16px
 - padding: 20px
-- 그림자: 없음 (다크 테마), `0 2px 8px rgba(0,0,0,0.08)` (라이트)
+- 그림자: 없음 (다크), `0 2px 8px rgba(0,0,0,0.08)` (라이트)
 - 병원 로고: 48x48, border-radius 12px
 - 간격: 항목 간 12px
 
 **CTA Button (Primary)**
-- 배경: `accent` (`#C0392B`)
-- 텍스트: `#FFFFFF`, `cta` 토큰
+- 배경: `accent-burgundy` (`#8B1A2B`)
+- 텍스트: `#FFFFFF`, Inter SemiBold 16px
 - height: 52px
 - border-radius: 12px
-- pressed: `accent-pressed`
+- pressed: `accent-light` (`#A62639`)
 - disabled: opacity 0.4
 
 **CTA Button (Secondary)**
 - 배경: transparent
-- border: 1px solid `divider`
-- 텍스트: `text-primary`, `cta` 토큰
+- border: 1px solid `border-default`
+- 텍스트: `fg-primary`, Inter SemiBold 16px
 - height: 48px
 - border-radius: 12px
 
 **Chip (카테고리/시술 태그)**
 - 배경: `surface-elevated`
-- 텍스트: `text-secondary`, `label` 토큰
+- 텍스트: `fg-secondary`, Geist 12px
 - height: 32px
 - padding: 0 12px
 - border-radius: 16px
-- 선택 시: border 1px `accent`, 텍스트 `accent`
+- 선택 시: border 1px `accent-burgundy`, 텍스트 `accent-burgundy`
 
 **Bottom Navigation**
-- 배경: `bg-primary`
-- 상단 border: 1px `divider`
+- 배경: `surface-primary`
+- 상단 border: 1px `border-subtle`
 - 아이콘: 24x24
 - 라벨: `caption` 토큰
-- 비활성: `text-disabled`, 활성: `accent`
+- 비활성: `fg-muted`, 활성: `accent-burgundy`
 - 탭: 홈, 병원, 내 상담, 커뮤니티, MY
 
 **Input Field**
-- 배경: `surface`
-- border: 1px `divider`, focus 시 `accent`
+- 배경: `surface-tertiary`
+- border: 1px `border-default`, focus 시 `accent-burgundy`
 - height: 48px
 - padding: 0 16px
 - border-radius: 10px
-- placeholder: `text-disabled`
+- placeholder: `fg-muted`
 - 에러 상태: border `error`, 하단 에러 메시지 `caption` 토큰 `error` 색상
 
 **Avatar (병원 프로필)**
