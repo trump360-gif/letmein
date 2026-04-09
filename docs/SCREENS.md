@@ -1,6 +1,6 @@
-# FEATURES.md - 블랙라벨 Flutter App Feature Spec
+# SCREENS.md -- letmein Flutter App Screen Specs
 
-> Tech: Flutter 3.x + Riverpod + GoRouter + Freezed | Next.js API Server | Centrifugo WS (ws.codeb.kr, namespace: letmein) | Redis JSON Cache + BullMQ
+Tech: Flutter 3.x + Riverpod + GoRouter + Freezed | Next.js API Server | Centrifugo WS
 
 ---
 
@@ -64,36 +64,6 @@
 
 ---
 
-## 2. Common Patterns
-
-### Error UI
-- 서버 에러: `ErrorCard(message, onRetry)` 중앙 배치
-- 네트워크 끊김: `OfflineBanner` 상단 고정, 자동 복구 시 dismiss
-- 400 계열: 인라인 텍스트 에러, 필드 하단
-
-### Loading (5계층 최적화)
-- Layer 1: `Shimmer` skeleton 즉시 표시 (0ms)
-- Layer 2: Redis JSON 캐시 → 피드 데이터 즉시 반환 (~5ms)
-- Layer 3: WebP 썸네일 300px 우선 로딩 (~30KB)
-- Layer 4: 상세 진입 시 800px, 확대 시 2048px 지연 로딩
-- Layer 5: R2 CDN 엣지 캐시
-- 버튼 로딩: `CircularProgressIndicator` 교체
-
-### Empty State
-- 일러스트 + 안내 텍스트 + CTA 버튼 (예: "아직 상담 내역이 없어요" + "상담 요청하기")
-
-### Pull-to-refresh
-- 모든 리스트 화면 `RefreshIndicator` 적용, ref.invalidate(provider) 호출
-
-### Image Upload Pattern
-- 갤러리/카메라 → EXIF strip → 2048px WebP q80 → presigned URL PUT → R2 직접 업로드
-- 업로드 완료 → POST /images/upload-complete → BullMQ 비동기 처리
-- 서버 워커: 썸네일(300px) + 중간(800px) WebP 자동 생성
-- 동시 최대 5장, 개별 progress, 실패 시 BullMQ 자동 재시도 3회
-- 사용자는 원본 업로드만 대기, 썸네일 생성은 백그라운드
-
----
-
 ## 3. Screen Specs
 
 ### 3-a. OnboardingScreen (/onboarding)
@@ -123,24 +93,35 @@ Layout: 중앙 로고 + 소셜 로그인 버튼 스택
 Components:
 - 앱 로고 + "블랙라벨" 텍스트
 - `KakaoLoginButton`: 카카오 SDK 연동
+- `NaverLoginButton`: 네이버 SDK 연동
+- `GoogleSignInButton`: Google Sign-In 연동
 - `AppleSignInButton`: iOS만 표시 (POST /auth/apple)
+- `EmailLoginButton`: 이메일 로그인 → 이메일/비밀번호 폼 화면
 - 하단 약관 동의 링크: 이용약관 / 개인정보처리방침
 
 Interactions:
-- 카카오 로그인 → OAuth token → 서버 POST /auth/kakao → JWT 발급
+- 소셜 로그인 → OAuth token → 서버 POST /auth/{provider} → JWT 발급
 - JWT → SecureStorage 저장 → `/home` redirect
 - 실패 시 `SnackBar` 에러 메시지
 - 신규 가입 시 → 약관 동의 바텀시트 (서비스 이용약관, 개인정보 수집, 만 18세 확인 필수 + 마케팅 선택)
+- 이미 다른 소셜로 가입된 이메일 → "카카오로 가입된 계정이 있습니다. 해당 계정으로 로그인 후 연결하세요" 안내
+- 이메일 로그인 → 이메일/비밀번호 입력 → POST /auth/email/login
+- 이메일 회원가입 → 이메일/비밀번호/닉네임 입력 → POST /auth/email/signup
 
 Constraints:
 - Apple 로그인: iOS 앱스토어 필수 요건, Android에서 미노출
+- 계정 통합: 동일 이메일 기준 1인 1계정, 소셜 계정 연결은 마이페이지에서
 
 AC:
 - [ ] 카카오 로그인 → 홈 이동 1.5초 이내
+- [ ] 네이버 로그인 정상 동작
+- [ ] Google 로그인 정상 동작
+- [ ] 이메일 로그인/회원가입 정상 동작
 - [ ] 토큰 SecureStorage 저장 확인
 - [ ] 로그인 실패 시 에러 메시지 표시
 - [ ] iOS에서 Apple 로그인 버튼 노출
 - [ ] 신규 가입 시 약관 동의 바텀시트 노출 (필수 항목 미동의 시 진행 불가)
+- [ ] 이미 가입된 이메일로 다른 소셜 로그인 시 "기존 계정 존재" 안내 표시
 
 ### 3-b2. HospitalRegisterScreen (/hospital/register)
 
@@ -213,6 +194,17 @@ Layout: Stepper 5단계, 상단 StepIndicator bar
 - 민감정보 동의 체크박스 (필수)
   - 미동의 시 사진 업로드 비활성, 텍스트 전용 상담 안내
 - 촬영 가이드 텍스트: "정면/측면 사진을 포함하면 더 정확한 상담이 가능해요"
+- `CameraGuideOverlay`: 카메라 촬영 시 반투명 얼굴 윤곽 오버레이
+  - 정면 가이드 / 좌측면 가이드 / 우측면 가이드 (3종 탭 전환)
+  - CustomPaint로 반투명 윤곽선 + 마이크로카피 ("정면을 바라보고 얼굴을 가이드에 맞춰주세요")
+  - camera 패키지 사용 (image_picker 대신)
+- `PrivacyAssuranceText`: 안심 문구 상시 표시
+  - "회원님의 사진은 매칭된 병원 담당자만 볼 수 있으며, 상담 종료 후 90일 뒤 자동 삭제됩니다"
+
+**Step 4~5 — 스텝퍼 응원 메시지**
+- Step 4 프로그레스 바 하단: "거의 다 됐어요"
+- Step 5 프로그레스 바 하단: "마지막 단계예요"
+- Step 1~3에는 응원 메시지 없음 (피로감 방지)
 
 **Step 5 — 확인 및 제출**
 - 요약 카드: 카테고리, 부위, 시기, 사진 썸네일 그리드
@@ -233,7 +225,12 @@ AC:
 - [ ] 5단계 순차 진행, 뒤로가기 시 데이터 유지
 - [ ] Step1 세부 카테고리 미선택 시 "다음" 비활성
 - [ ] Step4 사진 0장 + 동의 미체크 시 진행 불가
+- [ ] Step4 카메라 촬영 시 가이드 오버레이 정상 표시 (정면/좌측면/우측면)
+- [ ] Step4 안심 문구 상시 표시
+- [ ] Step4~5 응원 메시지 표시 (4단계: "거의 다 됐어요", 5단계: "마지막 단계예요")
+- [ ] Step4~5 응원 메시지가 1~3단계에는 표시되지 않음
 - [ ] 제출 API 호출 성공 → progress 화면 이동
+- [ ] 제출 버튼 탭 시 햅틱 피드백 (mediumImpact)
 - [ ] 임시저장 → 앱 재진입 시 이어하기 다이얼로그
 
 ### 3-e. ConsultationProgressScreen (/consultation/:id/progress)
@@ -244,7 +241,15 @@ Layout: 상단 4단계 프로그레스 바 + 상세 카드
 Components:
 - `StepProgressBar`: 접수완료→검토→선정→매칭완료 (활성 단계 펄스 애니메이션)
 - `ConsultationSummaryCard`: 카테고리, 부위, 시기, 사진 축소
-- `StatusMessage`: 단계별 안내 ("접수됨"/"검토중"/"선정중"/"매칭완료")
+- `StatusMessage`: 시간 경과에 따른 단계별 정직한 메시지
+  - 접수 직후: "상담 요청이 접수되었습니다"
+  - 5분~1시간: "코디네이터가 요청을 확인하고 있습니다"
+  - 1시간 이상: "조건에 맞는 병원을 찾고 있습니다. 평균 2~3시간 내 매칭됩니다"
+  - 매칭 1건+: "{N}곳이 매칭되었습니다! 추가 병원을 찾고 있습니다"
+  - 매칭 완료: "총 {N}곳의 병원이 매칭되었습니다"
+- `SkeletonMatchCard`: 매칭 대기 중 shimmer 애니메이션 카드 (실제 매칭 카드와 동일 레이아웃)
+  - 매칭 결과가 오면 스켈레톤 → 실제 카드로 전환
+  - 기존 CachedImage shimmer 패턴 재활용
 - `MatchCompleteButton`: 매칭 완료 시 → `/consultation/:id/matches`
 - `MatchFailedCard`: "조건에 맞는 병원을 찾지 못했어요" + "검색 범위 확대 중" 또는 "재요청" 버튼
 
@@ -258,6 +263,9 @@ AC:
 - [ ] 매칭 완료 시 "병원 확인" 버튼 활성화
 - [ ] 오프라인 복귀 시 최신 상태 자동 fetch
 - [ ] 매칭 실패 시 MatchFailedCard 노출 + 재요청 버튼
+- [ ] 시간 경과에 따른 StatusMessage 단계별 전환 정상 동작
+- [ ] 매칭 대기 중 SkeletonMatchCard shimmer 표시
+- [ ] 매칭 결과 수신 시 스켈레톤 → 실제 카드 전환
 
 ### 3-f. ConsultationMatchesScreen (/consultation/:id/matches)
 
@@ -407,6 +415,32 @@ AC:
 - [ ] 항목별 나란히 정상 표시
 - [ ] 비교에서 바로 상담 요청 진입
 
+### 3-j3. BookmarkListScreen (/bookmarks)
+
+Provider: `bookmarkListProvider` (AsyncNotifier<PaginatedList<Bookmark>>)
+Layout: 탭바 (병원/게시글) + 무한스크롤 리스트
+
+Components:
+- `BookmarkTabBar`: 병원 / 게시글 탭 전환
+- `HospitalBookmarkCard`: 병원 프로필 + 전문분야 + 평점 + 찜 해제 버튼
+- `PostBookmarkCard`: 게시글 썸네일 + 제목 + 좋아요/댓글 수 + 찜 해제 버튼
+- `CompareButton`: 병원 탭에서 2개 이상 선택 시 "비교하기" 하단 버튼 활성화
+- `EmptyBookmark`: "찜한 항목이 없어요" + CTA
+
+Interactions:
+- 탭 전환 → GET /bookmarks?targetType=HOSPITAL 또는 POST
+- 찜 해제 → DELETE /bookmarks/:id → optimistic update + 햅틱 lightImpact
+- 병원 카드 탭 → `/hospital/:id`
+- 게시글 카드 탭 → `/community/:id`
+- 비교하기 → `/hospital/:id/compare`
+
+AC:
+- [ ] 병원/게시글 탭 전환 정상 동작
+- [ ] 찜 해제 → 리스트에서 즉시 제거 (optimistic)
+- [ ] 병원 2개 이상 선택 시 비교 버튼 활성화
+- [ ] 빈 상태 시 Empty State + CTA 표시
+- [ ] 무한스크롤 20개 단위 로드
+
 ### 3-k. CommunityFeedScreen (/community)
 
 Provider: `communityFeedProvider` (AsyncNotifier<PaginatedList<Post>>)
@@ -414,7 +448,10 @@ Layout: 탭바 (전체/비포앤애프터/자유) + 무한스크롤 카드
 
 Components:
 - `CategoryTabBar`: 전체 / 비포앤애프터 / 자유게시판
-- `PostCard`: 썸네일(일자 기반 로테이션, 블러 옵션) + 제목 + 태그 + 좋아요/댓글 수
+- `PostCard`: 썸네일(일자 기반 로테이션, 블러 옵션) + 제목 + 태그 + 좋아요/댓글 수 + 찜 아이콘
+  - `ImagePageIndicator`: 이미지 2장 이상 시 우측 상단 dot 인디케이터 표시 ("사진이 더 있다" 힌트)
+  - 기존 youtube_hero.dart `_PageDots` 패턴 재활용
+  - `BookmarkIcon`: 우측 찜 토글 (POST/DELETE /bookmarks, targetType: POST) + 햅틱 lightImpact
 - `FloatingWriteButton` → `/community/create`
 - `TagFilter`: 인기 태그 가로 스크롤
 
@@ -430,6 +467,8 @@ AC:
 - [ ] 좋아요 optimistic update + 서버 동기화
 - [ ] 비포앤애프터 이미지 블러 처리 (미로그인/설정에 따라)
 - [ ] 같은 게시글이 매일 다른 썸네일로 노출 (로테이션)
+- [ ] 이미지 2장 이상 게시글에 dot 인디케이터 표시
+- [ ] 게시글 찜 토글 정상 동작 (서버 동기화 + 햅틱)
 
 ### 3-l. CommunityCreateScreen (/community/create)
 
@@ -464,7 +503,7 @@ Layout: 본문 스크롤 + 하단 댓글 입력
 Components:
 - `AuthorHeader`: 프로필 + 닉네임 + 작성일 + 더보기(신고/수정/삭제)
 - `ImageViewer`: 가로 스와이프 (비포앤애프터: 슬라이더 비교)
-- `ContentBody`: 본문 + 태그 칩 + `LikeButton`
+- `ContentBody`: 본문 + 태그 칩 + `LikeButton` + `BookmarkButton` (찜 토글, targetType: POST)
 - `CommentSection`: 댓글 리스트 (최신순) + 하단 고정 입력바
 
 Interactions:
@@ -476,6 +515,9 @@ AC:
 - [ ] 댓글 작성 즉시 리스트 반영
 - [ ] 본인 글 수정/삭제 가능
 - [ ] 신고 → 확인 다이얼로그 → API 호출
+- [ ] 게시글 찜 토글 정상 동작
+- [ ] 본인 댓글 수정 가능 (수정 시 "수정됨" 표시)
+- [ ] 본인 댓글 삭제 → "삭제된 댓글입니다" 표시 (대댓글 유지)
 
 ### 3-n. MyPageScreen (/mypage)
 
@@ -616,25 +658,4 @@ AC:
 - [ ] 무한스크롤 동작
 - [ ] 빈 상태 시 Empty State 표시
 
-## 4. Notification Matrix
-
-| Event | Push Title | 대상 | 딥링크 | 채널 |
-|-------|-----------|------|--------|------|
-| 상담 접수 확인 | "상담이 접수되었습니다" | user | /consultation/:id/progress | push |
-| 코디네이터 검토 시작 | "코디네이터가 검토를 시작했습니다" | user | /consultation/:id/progress | push |
-| 매칭 완료 | "맞춤 병원이 매칭되었습니다!" | user | /consultation/:id/matches | push+badge |
-| 새 메시지 | "{병원명}에서 메시지가 왔습니다" | user | /chat/:id | push+badge |
-| 채팅 만료 3일 전 | "채팅이 3일 후 종료됩니다" | user,hospital | /chat/:id | push |
-| 채팅 만료 | "채팅이 종료되었습니다" | user,hospital | /chat/:id | push |
-| 방문 예약 확정 | "방문 예약이 확정되었습니다" | user,hospital | /chat/:id | push |
-| 리뷰 요청 | "상담은 만족스러우셨나요? 리뷰를 남겨주세요" | user | /mypage/reviews | push (상담 완료 3일 후) |
-| 새 리뷰 등록 | "새로운 리뷰가 등록되었습니다" | hospital | /hospital-dashboard | push |
-| 새 댓글 | "내 글에 댓글이 달렸습니다" | user | /community/:id | push |
-| 좋아요 N개 도달 | "내 글이 좋아요 {N}개를 달성했습니다" | user | /community/:id | push (10,50,100) |
-| 새 매칭 상담 | "새로운 상담 요청이 매칭되었습니다" | hospital | /hospital-dashboard | push+badge |
-| 매칭 유효기간 만료 | "매칭이 만료되었습니다. 새 상담을 요청해주세요" | user | /consultation/:id/matches | push |
-
-### Push 설정 규칙
-- 기본: 모든 알림 ON, 유저 제어: 카테고리별 on/off (상담/채팅/커뮤니티)
-- 야간 제한: 22:00~08:00 기본 무음 (설정에서 시간대 조절 가능), 아침 8시 일괄 요약 발송, 배지: 안 읽은 채팅 + 매칭 완료 합산
-- FCM topic: `user_{userId}`, `hospital_{hospitalId}` / Centrifugo: 실시간 전송 (push 보조)
+> Notification Matrix → README.md 섹션 9 참조
